@@ -62,3 +62,9 @@ std::string format_ptr(const void *ptr, size_t width) {
   }
   return result;
 }
+
+std::ostream&
+operator<<(std::ostream& os, insn_func_t& f) {
+  os << std::hex << reinterpret_cast<void *>(f);
+  return os;
+}

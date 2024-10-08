@@ -44,7 +44,8 @@ class _rs2_t(arg_t):
 class _imm2_t(arg_t):
 
     def to_string(self, insn: insn_t) -> str:
-        return str((insn.bits >> 25) & 0b11)
+        bits = int.from_bytes(insn.bits, 'little')
+        return str((bits >> 25) & 0b11)
 
 
 rd = _rd_t()

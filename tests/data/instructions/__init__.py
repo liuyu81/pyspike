@@ -14,5 +14,7 @@
 # limitations under the License.
 #
 from .thead_ba import XTheadBa
+from .thead_cmo import XTheadCmo
+from .thead_xstatus import THeadXStatus
 
-__all__ = ['XTheadBa', ]
+__all__ = ['XTheadBa', 'XTheadCmo', 'THeadXStatus']

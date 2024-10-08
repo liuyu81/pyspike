@@ -15,6 +15,7 @@
  */
 #include <dlfcn.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,12 +24,15 @@
 #include <pybind11/functional.h>
 
 #include <fesvr/term.h>
+#include <riscv/decode.h>
 #include <riscv/disasm.h>
+#include <riscv/encoding.h>
 #include <riscv/isa_parser.h>
 #include <riscv/sim.h>
 
 #include "fesvr_term.h"
 #include "riscv_cfg.h"
+#include "riscv_csrs.h"
 #include "riscv_decode.h"
 #include "riscv_devices.h"
 #include "riscv_disasm.h"
@@ -66,6 +70,37 @@ PYBIND11_MODULE(_riscv, m) {
         .def_property("isa", &managed_cfg_t::get_isa, &managed_cfg_t::set_isa)
         .def_property("priv", &managed_cfg_t::get_priv,
                       &managed_cfg_t::set_priv);
+  }
+
+  // riscv.csrs
+  {
+    auto mod_csrs = m.def_submodule("csrs");
+
+    py::class_<csr_t, py_csr_t>(mod_csrs, "csr_t")
+      .def(py::init([](processor_t* const proc, const reg_t addr) {
+        return new py_csr_t(proc, addr);
+      }), py::arg("proc"), py::arg("addr"))
+      // csr_t members
+      .def("verify_permissions", &csr_t::verify_permissions, py::arg("insn"), py::arg("write"))
+      .def("read", &csr_t::read)
+      .def_readonly("address", &csr_t::address)
+      // csr_t protected members
+      .def("unlogged_write", &py_csr_t::unlogged_write)
+      .def("written_value", &py_csr_t::written_value)
+      .def_readonly("proc", &py_csr_t::proc, py::return_value_policy::reference_internal)
+      .def_readonly("state", &py_csr_t::state, py::return_value_policy::reference_internal);
+
+    py::class_<basic_csr_t, csr_t>(mod_csrs, "basic_csr_t")
+      .def(py::init<processor_t* const, const reg_t, const reg_t>(), py::arg("proc"), py::arg("addr"), py::arg("value"));    
+
+    py::class_<proxy_csr_t, csr_t>(mod_csrs, "proxy_csr_t")
+      .def(py::init([](processor_t* const proc, const reg_t addr, py::object py_csr) {
+        auto raw_csr = PythonBridge::getInstance().track<py_csr_t*>(py_csr);
+        return new proxy_csr_t(proc, addr, raw_csr->shared_from_this());
+      }), py::arg("proc"), py::arg("addr"), py::arg("delegate"));
+
+    py::class_<const_csr_t, csr_t>(mod_csrs, "const_csr_t")
+      .def(py::init<processor_t* const, const reg_t, reg_t>(), py::arg("proc"), py::arg("addr"), py::arg("val"));
   }
 
   // riscv.debug_module
@@ -155,6 +190,10 @@ PYBIND11_MODULE(_riscv, m) {
   auto mod_decode = m.def_submodule("decode");
   {
     mod_decode.attr("MAX_INSN_LENGTH") = MAX_INSN_LENGTH;
+    mod_decode.attr("NXPR") = NXPR;
+    mod_decode.attr("NFPR") = NFPR;
+    mod_decode.attr("NVPR") = NVPR;
+    mod_decode.attr("NCSR") = NCSR;
 
     // guess instruction length from the least significant byte (insn_bits_t
     // version)
@@ -268,6 +307,9 @@ PYBIND11_MODULE(_riscv, m) {
 
     py::class_<disassembler_t>(mod_disasm, "disassembler_t")
         .def(py::init<const isa_parser_t *>(), py::arg("isa"))
+        .def("add_insn", [](disassembler_t& self, py::object py_insn) {
+          self.add_insn(PythonBridge::getInstance().track<disasm_insn_t*>(py_insn));
+        }, py::arg("insn"))
         .def("disassemble", &disassembler_t::disassemble)
         .def("lookup", &disassembler_t::lookup, py::return_value_policy::copy);
 
@@ -322,7 +364,7 @@ PYBIND11_MODULE(_riscv, m) {
       .def("set_debug", &extension_t::set_debug, py::arg("value"))
       .def("set_processor", &extension_t::set_processor, py::arg("_p"))
       // extension_t protected members
-      .def_readonly("p", &py_extension_t::p)
+      .def_readonly("p", &py_extension_t::p, py::return_value_policy::reference_internal)
       .def("illegal_instruction", &py_extension_t::illegal_instruction)
       .def("raise_interrupt", &py_extension_t::raise_interrupt)
       .def("clear_interrupt", &py_extension_t::clear_interrupt);
@@ -420,9 +462,6 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zicfilp", isa_extension_t::EXT_ZICFILP)
         .value("zicfiss", isa_extension_t::EXT_ZICFISS)
         .value("ssdbltrp", isa_extension_t::EXT_SSDBLTRP)
-        .value("smmpm", isa_extension_t::EXT_SMMPM)
-        .value("smnpm", isa_extension_t::EXT_SMNPM)
-        .value("ssnpm", isa_extension_t::EXT_SSNPM)
         .export_values();
 
     py::enum_<impl_extension_t>(mod_isa_parser, "impl_extension_t")
@@ -478,9 +517,24 @@ PYBIND11_MODULE(_riscv, m) {
 
     py::class_<state_t>(mod_processor, "state_t")
         .def(py::init())
+        // state_t members
         .def_readwrite("pc", &state_t::pc)
         .def_readonly("XPR", &state_t::XPR, py::return_value_policy::reference_internal)
         .def_readonly("FPR", &state_t::FPR, py::return_value_policy::reference_internal)
+        .def_readonly("prv", &state_t::prv)
+        .def_readonly("prev_prv", &state_t::prev_prv)
+        .def_readonly("prv_changed", &state_t::prv_changed)
+        .def_readonly("v", &state_t::v)
+        .def_readonly("prev_v", &state_t::prev_v)
+        .def_readonly("v_changed", &state_t::v_changed)
+        .def_readonly("last_inst_priv", &state_t::last_inst_priv)
+        .def_readonly("last_inst_xlen", &state_t::last_inst_xlen)
+        .def_readonly("last_inst_flen", &state_t::last_inst_flen)
+        // state_t methods
+        .def("add_csr", [](state_t& self, reg_t addr, py::object py_csr) {
+          auto raw_csr = PythonBridge::getInstance().track<py_csr_t*>(py_csr);
+          self.add_csr(addr, raw_csr->shared_from_this());
+        }, py::arg("addr"), py::arg("csr"))
         .def("reset", &state_t::reset, py::arg("proc"), py::arg("max_isa"));
 
     py::class_<processor_t>(mod_processor, "processor_t")
@@ -490,15 +544,25 @@ PYBIND11_MODULE(_riscv, m) {
             py::overload_cast<int, insn_t, bool, bool>(&processor_t::get_csr),
             py::arg("which"), py::arg("insn"), py::arg("write"),
             py::arg("peek"))
-      .def("get_csr", py::overload_cast<int>(&processor_t::get_csr),
-            py::arg("which"))
-      .def("put_csr", &processor_t::put_csr)
+      .def("get_csr", py::overload_cast<int>(&processor_t::get_csr), py::arg("which"))
+      .def("put_csr", &processor_t::put_csr, py::arg("which"), py::arg("val"))
       // state
       .def_property_readonly("state", &processor_t::get_state, py::return_value_policy::reference_internal)
+      // instruction
+      .def("register_base_insn", &processor_t::register_base_insn, py::arg("insn"))
+      .def("register_custom_insn", &processor_t::register_custom_insn, py::arg("insn"))
       // extension
       .def("register_extension", &processor_t::register_extension, py::arg("x"))
       .def("get_extension", py::overload_cast<>(&processor_t::get_extension))
-      .def("get_extension", py::overload_cast<const char*>(&processor_t::get_extension), py::arg("name"));
+      .def("get_extension", py::overload_cast<const char*>(&processor_t::get_extension), py::arg("name"))
+      // get address of processor_t *
+      .def_static("addressof", [](py::object proc) -> uint64_t {
+        return reinterpret_cast<uint64_t>(py::cast<processor_t*>(proc));
+      })
+      // instantiate py::object from processor_t *
+      .def_static("from_address", [](uint64_t addr) -> py::object {
+        return py::cast(reinterpret_cast<processor_t*>(addr));
+      }, py::arg("proc"));
 
     // insn_func_t bindings
 
@@ -508,9 +572,8 @@ PYBIND11_MODULE(_riscv, m) {
     auto typing = py::module_::import("typing");
 
     auto symb = py::dict(
-      // from ctypes import CFUNCTYPE, addressof, c_void_p, c_uint64, py_object
+      // from ctypes import CFUNCTYPE, c_void_p, c_uint64, py_object
       "CFUNCTYPE"_a=ctypes.attr("CFUNCTYPE"),
-      "addressof"_a=ctypes.attr("addressof"),
       "c_void_p"_a=ctypes.attr("c_void_p"),
       "c_uint64"_a=ctypes.attr("c_uint64"),
       "py_object"_a=ctypes.attr("py_object"),
@@ -528,14 +591,12 @@ PYBIND11_MODULE(_riscv, m) {
       def insn_func_py2ct(f: Callable[[processor_t, insn_t, int], int]) -> insn_func_ctype:
           @insn_func_ctype
           def py2ct(p: int, insn: c_uint64, pc: int) -> int:
-              real_p: processor_t = py_object.from_address(p).value
-              return f(real_p, insn_t(insn), pc)
+              return f(processor_t.from_address(p), insn_t(insn), pc)
           return py2ct
 
       def insn_func_ct2py(f: insn_func_ctype) -> Callable[[processor_t, insn_t, int], int]:
           def ct2py(p: processor_t, insn: insn_t, pc: int) -> int:
-              wrap_p: py_object = py_object(p)
-              return f(addressof(wrap_p), int.from_bytes(insn.bits, "little"), pc)
+              return f(processor_t.addressof(p), int.from_bytes(insn.bits, "little"), pc)
           return ct2py
     )", symb);
 
@@ -554,6 +615,7 @@ PYBIND11_MODULE(_riscv, m) {
 
     py::class_<insn_desc_t>(mod_processor, "insn_desc_t")
       .def(py::init(&py_insn_desc_t_create),
+           py::keep_alive<1, 2>(),
           py::arg("match"), py::arg("mask"),
           py::arg("fast_rv32i"), py::arg("fast_rv64i"),
           py::arg("fast_rv32e"), py::arg("fast_rv64e"),
@@ -566,56 +628,56 @@ PYBIND11_MODULE(_riscv, m) {
       .def_property_readonly("fast_rv32i", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.fast_rv32i)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.fast_rv32i)));
       })
       .def_property_readonly("fast_rv64i", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.fast_rv64i)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.fast_rv64i)));
       })
       .def_property_readonly("fast_rv32e", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.fast_rv32e)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.fast_rv32e)));
       })
       .def_property_readonly("fast_rv64e", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.fast_rv64e)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.fast_rv64e)));
       })
       .def_property_readonly("logged_rv32i", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.logged_rv32i)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.logged_rv32i)));
       })
       .def_property_readonly("logged_rv64i", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.logged_rv64i)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.logged_rv64i)));
       })
       .def_property_readonly("logged_rv32e", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.logged_rv32e)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.logged_rv32e)));
       })
       .def_property_readonly("logged_rv64e", [](const insn_desc_t& self) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.logged_rv64e)));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.logged_rv64e)));
       })
       .def("func", [](const insn_desc_t& self, int xlen, bool rve, bool logged) -> py::function {
         auto mod = py::module_::import("riscv._riscv.processor");
         auto ct2py = mod.attr("insn_func_ct2py");
-        auto ctype = mod.attr("insn_func_ctype").attr("from_address");
-        return ct2py(ctype(reinterpret_cast<uint64_t>(self.func(xlen, rve, logged))));
+        auto ctypeof = mod.attr("insn_func_ctype");
+        return ct2py(ctypeof(reinterpret_cast<uint64_t>(self.func(xlen, rve, logged))));
       }, py::arg("xlen"), py::arg("rve"), py::arg("logged"))
       // static members
       .def_readonly_static("illegal_instruction", &insn_desc_t::illegal_instruction);

@@ -20,8 +20,10 @@
 #include <functional>
 
 #include <riscv/abstract_device.h>
+#include <riscv/csrs.h>
 #include <riscv/disasm.h>
 #include <riscv/extension.h>
+#include <riscv/processor.h>
 #include <riscv/rocc.h>
 
 #include <pybind11/embed.h>
@@ -44,7 +46,8 @@ public:
 
 public:
   // keep the python object alive on the C++ side
-  template <typename T> T track(pybind11::handle py_obj) {
+  template <typename T>
+  T track(pybind11::handle py_obj) {
     static_assert(
         std::is_pointer<T>::value &&
             (std::is_base_of<abstract_device_t,
@@ -53,18 +56,24 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<arg_t,
                              typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<csr_t,
+                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<rocc_t,
                               typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<extension_t,
+                             typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<insn_desc_t,
+                             typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<disasm_insn_t,
                              typename std::remove_pointer<T>::type>::value),
-        "T must be abstract_device_t, device_factory_t, arg_t, rocc_t or extension_t");
+        "T must be abstract_device_t, device_factory_t, arg_t, csr_t, rocc_t, extension_t, insn_desc_t, or disasm_insn_t");
     T obj = pybind11::cast<T>(py_obj);
     uint64_t addr = reinterpret_cast<uint64_t>(obj);
     if (references.emplace(addr, py_obj).second) {
       py_obj.inc_ref();
     }
     return obj;
-  }
+  };
 
 private:
   // do we need to initialize the python interpreter?
@@ -78,5 +87,7 @@ private:
 };
 
 std::string format_ptr(const void *ptr, size_t width = 16);
+
+std::ostream& operator<<(std::ostream& os, insn_func_t& f);
 
 #endif // _PYTHON_BRIDGE_H_

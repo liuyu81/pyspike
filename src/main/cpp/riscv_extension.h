@@ -39,8 +39,7 @@ public:
 public:
   virtual const char* name() override;
   virtual void reset() override;
-  virtual void set_debug(bool UNUSED value);
-  void set_processor(processor_t* _p);
+  virtual void set_debug(bool UNUSED value) override;
 
 public:
   // make protected members accessible from python

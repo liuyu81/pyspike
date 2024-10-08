@@ -23,30 +23,33 @@ from riscv.processor import insn_desc_t, processor_t
 
 from . import fmt
 
+
 # pylint: disable=abstract-method
 @insn.register("theadba")
 class XTheadBa(insn.ISA):
     """
     Functional Mockup of XTheadBa (th.addsl) Instruction
 
-    C.f. https://github.com/XUANTIE-RV/thead-extension-spec/blob/master/xtheadba/addsl.adoc
+    C.f. https://github.com/XUANTIE-RV/thead-extension-spec/blob/master/xtheadba.adoc
     """
 
     def get_instructions(self) -> List[insn_desc_t]:
         return [
-            insn_desc_t(0x100b, 0xf800707f, *(self.do_addsl, ) *  8),
+            insn_desc_t(0x100b, 0xf800707f, * (self.do_addsl, ) * 8)
         ]
 
     def get_disasms(self) -> List[disasm_insn_t]:
         return [
-            disasm_insn_t("th.addsl", 0x100b, 0xf800707f, fmt.rd, fmt.rs1, fmt.rs2, fmt.imm2),
+            disasm_insn_t("th.addsl", 0x100b, 0xf800707f,
+                          fmt.rd, fmt.rs1, fmt.rs2, fmt.imm2),
         ]
 
     def do_addsl(self, p: processor_t, i: insn_t, pc: int) -> int:
         """
         reg[rd] := reg[rs1] + (reg[rs2] << imm2)
         """
-        imm2 = (i.bits >> 25) & 0b11
+        bits = int.from_bytes(i.bits, 'little')
+        imm2 = (bits >> 25) & 0b11
         wdata = p.state.XPR[i.rs1] + (p.state.XPR[i.rs2] << imm2)
         p.state.XPR.write(i.rd, wdata)
         return pc + len(i)

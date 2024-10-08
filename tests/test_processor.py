@@ -17,6 +17,8 @@
 from riscv.decode import insn_t
 from riscv.processor import insn_desc_t, processor_t, illegal_instruction
 
+from instructions import XTheadBa
+
 
 # pylint: disable=invalid-name
 class addi_t:
@@ -24,12 +26,12 @@ class addi_t:
     addi rd, rs1, imm
     """
 
-    def __call__(self, p: processor_t, insn: insn_t, pc: int) -> int:
+    def __call__(self, p: processor_t, i: insn_t, pc: int) -> int:
         """
         reg[rd] := reg[rs1] + i_imm
         """
-        p.state.XPR.write(insn.rd, p.state.XPR[insn.rs1] + insn.i_imm)
-        return pc + len(insn)
+        p.state.XPR.write(i.rd, p.state.XPR[i.rs1] + i.i_imm)
+        return pc + len(i)
 
 
 def test_insn_desc_t(mock_sim):
@@ -53,5 +55,12 @@ def test_insn_desc_t(mock_sim):
     assert p.state.XPR[i.rd] == 0
 
     f32i = d.func(32, False, False)
-    assert f32i(p, i, 0) == 4
+    assert f32i(p, i, 4) == 8
     assert p.state.XPR[i.rd] == 60
+
+
+def test_register_custom_insn(mock_sim):
+    p: processor_t = mock_sim.get_core(0)
+    do_addsl = XTheadBa().do_addsl
+    i = insn_desc_t(0x100b, 0xf800707f, do_addsl, *(illegal_instruction, ) * 7)
+    p.register_custom_insn(i)

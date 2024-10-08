@@ -38,10 +38,12 @@
 //     logged_rv64e: Callable[[processor_t, insn_t, int], int]
 // ) -> insn_desc_t
 insn_desc_t * py_insn_desc_t_create(
-    reg_t match, reg_t mask,
+    insn_bits_t match,
+    insn_bits_t mask,
     pybind11::function fast_rv32i, pybind11::function fast_rv64i,
     pybind11::function fast_rv32e, pybind11::function fast_rv64e,
     pybind11::function logged_rv32i, pybind11::function logged_rv64i,
     pybind11::function logged_rv32e, pybind11::function logged_rv64e);
+
 
 #endif // _RISCV_PROCESSOR_H_

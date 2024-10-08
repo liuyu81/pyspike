@@ -4,16 +4,15 @@ name: Continuous Integration
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
   pull_request:
     branches:
-      - master
+      - main
 
 permissions:
   contents: read
 
 env:
+  RISCV: /opt/riscv
   PYBIND11_DETAILED_ERROR_MESSAGES: 1
 
 jobs:
@@ -32,6 +31,8 @@ jobs:
           - "3.11"
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: Setup 🐍 ${{ matrix.python }}
       uses: actions/setup-python@v5
       with:
@@ -44,12 +45,12 @@ jobs:
         python setup.py build_ext --inplace
     - name: Test package
       run: |
-        python -m test -v
+        python -m pytest -v
     - name: Check metadata
       run: |
-        twine check dist/libriscv-*
+        twine check dist/spike-*
     # - name: Save artifacts
     #   uses: actions/upload-artifact@v4
     #   with:
-    #     name: pyspike
-    #     path: dist/libriscv-*
+    #     name: spike
+    #     path: dist/spike-*

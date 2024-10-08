@@ -26,8 +26,9 @@ def test_metadata():
 
 
 @pytest.mark.parametrize("name", [
-    "cfg", "debug_module", "decode", "devices", "disasm", "extension",
-    "isa_parser", "processor", "htif", "simif", "sim", "fesvr"
+    "cfg", "csrs", "debug_module", "decode", "devices", "disasm",
+    "extension", "isa_parser", "processor", "htif", "simif", "sim",
+    "fesvr",
 ])
 def test_pymodule(name):
     mod = importlib.import_module(f"riscv.{name}")

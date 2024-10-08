@@ -37,22 +37,63 @@ def test_disassembler_t(raw_insn, exp_name, exp_mnemonic):
 
 
 # pylint: disable=invalid-name
-class xrd_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rd]
-
-
-# pylint: disable=invalid-name
 class rvc_imm_t(arg_t):
 
     def to_string(self, insn: insn_t) -> str:
         return str(insn.rvc_imm)
 
 
-def test_disasm_insn_t():
-    x = disasm_insn_t("c.li", 0x4581, 0x0, xrd_t(), rvc_imm_t())
-    assert x.name == "c.li"
-    assert x.match == 0x4581
-    assert x.mask == 0x0
-    assert x.to_string(insn_t(b"\x81\x45")) == "c.li    a1, 0"
+
+class rd_t(arg_t):
+
+    def to_string(self, insn: insn_t) -> str:
+        return xpr_name[insn.rd]
+
+
+class rs1_t(arg_t):
+
+    def to_string(self, insn: insn_t) -> str:
+        return xpr_name[insn.rs1]
+
+
+class rs2_t(arg_t):
+
+    def to_string(self, insn: insn_t) -> str:
+        return xpr_name[insn.rs2]
+
+
+class imm2_t(arg_t):
+
+    def to_string(self, insn: insn_t) -> str:
+        bits = int.from_bytes(insn.bits, "little")
+        return str((bits >> 25) & 0b11)
+
+
+# pylint: disable=too-many-arguments
+@pytest.mark.parametrize("name,match,mask,operands,raw_insn,mnemonic", [
+    pytest.param(
+        "c.li", 0x4581, 0x0,
+        (rd_t(), rvc_imm_t()),
+        b"\x81\x45",
+        "c.li    a1, 0", id="c.li"),
+    pytest.param(
+        "th.addsl", 0x100b, 0xf800707f,
+        (rd_t(), rs1_t(), rs2_t(), imm2_t()),
+        b"\x8b\x12\x73\x04",
+        "th.addsl t0, t1, t2, 2", id="th.addsl"),
+])
+def test_disasm_insn(*, name, match, mask, operands, raw_insn, mnemonic):
+    """
+    test custom instruction disassembler
+    """
+
+    x = disasm_insn_t(name, match, mask, *operands)
+    assert x.name == name
+    assert x.match == match
+    assert x.mask == mask
+    assert x.to_string(insn_t(raw_insn)) == mnemonic
+
+    isa_parser = isa_parser_t("rv64gcv_zicsr_zifencei", "msu")
+    disasm = disassembler_t(isa_parser)
+    disasm.add_insn(x)
+    assert disasm.disassemble(insn_t(raw_insn)) == mnemonic

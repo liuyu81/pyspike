@@ -27,6 +27,7 @@ from riscv.debug_module import debug_module_config_t
 from riscv.sim import sim_t
 
 # pylint: disable=unused-import
+import instructions
 import peripherals
 
 

@@ -33,7 +33,8 @@ package = importlib.import_module("riscv")
 module = Pybind11Extension(
     "riscv._riscv",
     glob.glob("src/main/cpp/*.cc"),
-    extra_compile_args=[],
+    extra_compile_args=[
+    ],
     define_macros=[
         ("ENV_PYSPIKE_LIBS", f"\"{ package.ENV_PYSPIKE_LIBS }\""),
         ("PYBIND11_DETAILED_ERROR_MESSAGES", "1"),

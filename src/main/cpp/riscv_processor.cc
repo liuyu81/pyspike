@@ -13,54 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
 #include "riscv_processor.h"
+#include "py_bridge.h"
 
 namespace py = pybind11;
 
 insn_desc_t *
 py_insn_desc_t_create(
-    reg_t match, reg_t mask,
+    insn_bits_t match, insn_bits_t mask,
     py::function fast_rv32i, py::function fast_rv64i,
     py::function fast_rv32e, py::function fast_rv64e,
     py::function logged_rv32i, py::function logged_rv64i,
     py::function logged_rv32e, py::function logged_rv64e
 ) {
-    py::function addressof = py::module_::import("ctypes").attr("addressof");
+    py::function cast = py::module_::import("ctypes").attr("cast");
+    py::function c_void_p = py::module_::import("ctypes").attr("c_void_p");
     py::function py2ct = py::module_::import("riscv._riscv.processor").attr("insn_func_py2ct");
 
-    auto ct_fast_rv32i = py2ct(fast_rv32i);
-    auto ct_fast_rv64i = py2ct(fast_rv64i);
-    auto ct_fast_rv32e = py2ct(fast_rv32e);
-    auto ct_fast_rv64e = py2ct(fast_rv64e);
-
-    ct_fast_rv32i.inc_ref();
-    ct_fast_rv64i.inc_ref();
-    ct_fast_rv32e.inc_ref();
-    ct_fast_rv64e.inc_ref();
-
-    auto ct_logged_rv32i = py2ct(logged_rv32i);
-    auto ct_logged_rv64i = py2ct(logged_rv64i);
-    auto ct_logged_rv32e = py2ct(logged_rv32e);
-    auto ct_logged_rv64e = py2ct(logged_rv64e);
-
-    ct_logged_rv32i.inc_ref();
-    ct_logged_rv64i.inc_ref();
-    ct_logged_rv32e.inc_ref();
-    ct_logged_rv64e.inc_ref();
+    auto ct_fast_rv32i = py::cast<uint64_t>(cast(py2ct(fast_rv32i), c_void_p).attr("value"));
+    auto ct_fast_rv64i = py::cast<uint64_t>(cast(py2ct(fast_rv64i), c_void_p).attr("value"));
+    auto ct_fast_rv32e = py::cast<uint64_t>(cast(py2ct(fast_rv32e), c_void_p).attr("value"));
+    auto ct_fast_rv64e = py::cast<uint64_t>(cast(py2ct(fast_rv64e), c_void_p).attr("value"));
+    auto ct_logged_rv32i = py::cast<uint64_t>(cast(py2ct(logged_rv32i), c_void_p).attr("value"));
+    auto ct_logged_rv64i = py::cast<uint64_t>(cast(py2ct(logged_rv64i), c_void_p).attr("value"));
+    auto ct_logged_rv32e = py::cast<uint64_t>(cast(py2ct(logged_rv32e), c_void_p).attr("value"));
+    auto ct_logged_rv64e = py::cast<uint64_t>(cast(py2ct(logged_rv64e), c_void_p).attr("value"));
 
     return new insn_desc_t{
-        match, mask,
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_fast_rv32i))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_fast_rv64i))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_fast_rv32e))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_fast_rv64e))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_logged_rv32i))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_logged_rv64i))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_logged_rv32e))),
-        reinterpret_cast<insn_func_t>(py::cast<uint64_t>(addressof(ct_logged_rv64e)))
+        match,
+        mask,
+        reinterpret_cast<insn_func_t>(ct_fast_rv32i),
+        reinterpret_cast<insn_func_t>(ct_fast_rv64i),
+        reinterpret_cast<insn_func_t>(ct_fast_rv32e),
+        reinterpret_cast<insn_func_t>(ct_fast_rv64e),
+        reinterpret_cast<insn_func_t>(ct_logged_rv32i),
+        reinterpret_cast<insn_func_t>(ct_logged_rv64i),
+        reinterpret_cast<insn_func_t>(ct_logged_rv32e),
+        reinterpret_cast<insn_func_t>(ct_logged_rv64e)
     };
 }
