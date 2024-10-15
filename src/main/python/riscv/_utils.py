@@ -30,11 +30,14 @@ def find_python_library() -> pathlib.Path:
     lib_dir = sysconfig.get_config_var('LIBDIR')
     lib_name = sysconfig.get_config_var('LDLIBRARY')
     multiarch = sysconfig.get_config_var('MULTIARCH')
-    if lib_dir.endswith(multiarch):
-        # works for python3.9
-        return pathlib.Path(lib_dir).joinpath(lib_name).absolute()
-    # works for python3.8
-    return pathlib.Path(lib_dir).joinpath(multiarch, lib_name).absolute()
+    candidates = [
+        pathlib.Path(lib_dir).joinpath(lib_name),
+        pathlib.Path(lib_dir).joinpath(multiarch, lib_name),
+    ]
+    for lib in candidates:
+        if lib.exists():
+            return lib.absolute()
+    raise RuntimeError("Failed to locate python runtime library (libpython3.so).")
 
 
 def find_bridge_library() -> pathlib.Path:

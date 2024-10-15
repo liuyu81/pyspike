@@ -616,11 +616,11 @@ PYBIND11_MODULE(_riscv, m) {
     py::class_<insn_desc_t>(mod_processor, "insn_desc_t")
       .def(py::init(&py_insn_desc_t_create),
            py::keep_alive<1, 2>(),
-          py::arg("match"), py::arg("mask"),
-          py::arg("fast_rv32i"), py::arg("fast_rv64i"),
-          py::arg("fast_rv32e"), py::arg("fast_rv64e"),
-          py::arg("logged_rv32i"), py::arg("logged_rv64i"),
-          py::arg("logged_rv32e"), py::arg("logged_rv64e"))
+           py::arg("match"), py::arg("mask"),
+           py::arg("fast_rv32i"), py::arg("fast_rv64i"),
+           py::arg("fast_rv32e"), py::arg("fast_rv64e"),
+           py::arg("logged_rv32i"), py::arg("logged_rv64i"),
+           py::arg("logged_rv32e"), py::arg("logged_rv64e"))
       // members
       .def_readonly("match", &insn_desc_t::match)
       .def_readonly("mask", &insn_desc_t::mask)
