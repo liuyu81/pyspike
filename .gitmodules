@@ -1,0 +1,3 @@
+[submodule "vendor/spike"]
+	path = vendor/spike
+	url = ../spike

@@ -12,7 +12,7 @@ pytest-mypy
 pytest-pylint
 pytest-repeat
 pytest-timeout
-setuptools >= 51
-setuptools_scm[toml] >= 6.2
+setuptools >= 61
+setuptools_scm[toml] >= 8
 tox
 wheel

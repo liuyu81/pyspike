@@ -23,15 +23,15 @@ PySpike requires: Python 3.8+ and vanilla Spike (commit [37b0dc0](https://github
 ```bash
 (.venv) $ python -m build --no-isolation
 ...
-Successfully built spike-0.0.5.dev1.tar.gz and spike-0.0.5.dev1-cp38-cp38-linux_x86_64.whl
+Successfully built spike-0.0.5.dev2.tar.gz and spike-0.0.5.dev2-cp38-cp38-linux_x86_64.whl
 ```
 
 2. Install the wheel package with `pip`.
 
 ```bash
-(.venv) $ pip install spike-0.0.5.dev1-cp38-cp38-linux_x86_64.whl
+(.venv) $ pip install spike-0.0.5.dev2-cp38-cp38-linux_x86_64.whl
 ...
-Successfully installed spike-0.0.5.dev1
+Successfully installed spike-0.0.5.dev2
 ```
 
 3. Check that you installed the correct version
