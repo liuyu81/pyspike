@@ -1,0 +1,18 @@
+auditwheel
+build
+pip
+pybind11[global]
+twine
+patchelf
+pexpect
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mypy
+pytest-pylint
+pytest-repeat
+pytest-timeout
+setuptools >= 51
+setuptools_scm[toml] >= 6.2
+tox
+wheel
