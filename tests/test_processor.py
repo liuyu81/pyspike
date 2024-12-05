@@ -17,12 +17,12 @@
 from riscv.decode import insn_t
 from riscv.processor import insn_desc_t, processor_t, illegal_instruction
 
-from instructions import XTheadBa
-
 
 # pylint: disable=invalid-name
 class addi_t:
     """
+    RVI Add Immediate (addi) Instruction
+
     addi rd, rs1, imm
     """
 
@@ -30,29 +30,50 @@ class addi_t:
         """
         reg[rd] := reg[rs1] + i_imm
         """
-        p.state.XPR.write(i.rd, p.state.XPR[i.rs1] + i.i_imm)
+        wdata = p.state.XPR[i.rs1] + i.i_imm
+        p.state.XPR.write(i.rd, wdata)
+        p.state.log_reg_write[i.rd << 4] = (wdata, 0)
         return pc + len(i)
 
 
-def test_insn_desc_t(mock_sim):
+# pylint: disable=invalid-name
+class th_addsl_t:
+    """
+    XTheadBa (th.addsl) Instruction
 
+    th.addsl rd, rs1, rs2, imm2
+
+    C.f. https://github.com/XUANTIE-RV/thead-extension-spec/blob/master/xtheadba.adoc
+    """
+
+    def __call__(self, p: processor_t, i: insn_t, pc: int) -> int:
+        """
+        reg[rd] := reg[rs1] + (reg[rs2] << imm2)
+        """
+        bits = int.from_bytes(i.bits, 'little')
+        imm2 = (bits >> 25) & 0b11
+        wdata = p.state.XPR[i.rs1] + (p.state.XPR[i.rs2] << imm2)
+        p.state.XPR.write(i.rd, wdata)
+        p.state.log_reg_write[i.rd << 4] = (wdata, 0)
+        return pc + len(i)
+
+
+def test_register_base_insn(mock_sim):
     p: processor_t = mock_sim.get_core(0)
-    p.state.XPR.reset()
+    p.reset()
 
     do_addi = addi_t()
     d = insn_desc_t(0x13, 0x707f, do_addi, *(illegal_instruction, ) * 7)
-
     assert d.match == 0x13
     assert d.mask == 0x707f
+    p.register_base_insn(d)
 
-    i = insn_t(b"\x13\x86\x82\x02")
+    i = insn_t(0x02828613)
     assert i.rd == 12   # rd <- a2 (x12)
     assert i.rs1 == 5   # rs1 <- t0 (x5)
     assert i.i_imm == 40
 
-    p.state.XPR.write(i.rs1, 20)
-    assert p.state.XPR[i.rs1] == 20     # reg[rs1] <- 20
-    assert p.state.XPR[i.rd] == 0
+    p.state.XPR.write(i.rs1, 20)    # x[rs1] <- 20
 
     f32i = d.func(32, False, False)
     assert f32i(p, i, 4) == 8
@@ -61,6 +82,24 @@ def test_insn_desc_t(mock_sim):
 
 def test_register_custom_insn(mock_sim):
     p: processor_t = mock_sim.get_core(0)
-    do_addsl = XTheadBa().do_addsl
-    i = insn_desc_t(0x100b, 0xf800707f, do_addsl, *(illegal_instruction, ) * 7)
-    p.register_custom_insn(i)
+    p.reset()
+
+    do_th_addsl = th_addsl_t()
+    d = insn_desc_t(0x100b, 0xf800707f, do_th_addsl, *(illegal_instruction, ) * 7)
+    assert d.match == 0x100b
+    assert d.mask == 0xf800707f
+    p.register_custom_insn(d)
+
+    i = insn_t(0x0473128b)
+    assert i.rd == 5    # rd <- t0 (x5)
+    assert i.rs1 == 6   # rs1 <- t1 (x6)
+    assert i.rs2 == 7   # rs2 <- tt (x7)
+    imm2 = (int.from_bytes(i.bits, 'little') >> 25) & 0b11
+    assert imm2 == 2
+
+    p.state.XPR.write(i.rs1, 60)  # x[rs1] <- 60
+    p.state.XPR.write(i.rs2, 1)   # x[rs2] <- 1
+
+    f32i = d.func(32, False, False)
+    assert f32i(p, i, 4) == 8
+    assert p.state.XPR[i.rd] == 64

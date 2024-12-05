@@ -55,8 +55,7 @@ class MyLRSC(extension_t):
         """
         x[rd] = LoadReserved32(M[x[rs1]])
         """
-        addr: int = p.state.XPR[i.rs1]
-        self._reserved_address_32 = addr
+        self._reserved_address_32 = addr = p.state.XPR[i.rs1]
         self._reserved_address_64 = None
         abs_addr: int = c_ulong(p.mmu.load_reserved_32(addr)).value
         p.state.XPR.write(i.rd, abs_addr)
@@ -67,9 +66,8 @@ class MyLRSC(extension_t):
         """
         x[rd] = LoadReserved64(M[x[rs1]])
         """
-        addr: int = p.state.XPR[i.rs1]
         self._reserved_address_32 = None
-        self._reserved_address_64 = addr
+        self._reserved_address_64 = addr = p.state.XPR[i.rs1]
         abs_addr: int = c_ulong(p.mmu.load_reserved_64(addr)).value
         p.state.XPR.write(i.rd, abs_addr)
         p.state.log_reg_write[i.rd << 4] = (abs_addr, 0)
@@ -84,9 +82,9 @@ class MyLRSC(extension_t):
         fail: int = 1
         if addr == self._reserved_address_32:
             fail = 0 if p.mmu.store_conditional_32(addr, data & 0xffffffff) else 1
-        self._reserved_address_32 = None
         p.state.XPR.write(i.rd, fail)
         p.state.log_reg_write[i.rd << 4] = (fail, 0)
+        self._reserved_address_32 = None
         return pc + len(i)
 
     def _do_sc_64(self, p: processor_t, i: insn_t, pc: int) -> int:
@@ -98,7 +96,7 @@ class MyLRSC(extension_t):
         fail: int = 1
         if addr == self._reserved_address_64:
             fail = 0 if p.mmu.store_conditional_64(addr, data) else 1
-        self._reserved_address_64 = None
         p.state.XPR.write(i.rd, fail)
         p.state.log_reg_write[i.rd << 4] = (fail, 0)
+        self._reserved_address_64 = None
         return pc + len(i)

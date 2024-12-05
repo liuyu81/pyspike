@@ -32,6 +32,6 @@ class MSCTLR(csr_t):
         term.write(b"read MSCTLR\n")
         return self.v
 
-    def write(self, v: int) -> None:
+    def unlogged_write(self, v: int) -> None:
         term.write(b"write MSCTLR\n")
         self.v = v

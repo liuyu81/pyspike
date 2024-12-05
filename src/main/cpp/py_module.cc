@@ -634,6 +634,10 @@ PYBIND11_MODULE(_riscv, m) {
         .def("get_extension",
              py::overload_cast<const char *>(&processor_t::get_extension),
              py::arg("name"))
+        // reset
+        .def("reset", &processor_t::reset)
+        // step
+        .def("step", &processor_t::step, py::arg("n"))
         // get address of processor_t *
         .def_static("addressof",
                     [](py::object proc) -> uint64_t {

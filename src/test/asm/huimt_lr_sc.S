@@ -21,28 +21,10 @@ _start:
     sc.w    t2, t1, (t0)
     j exit
 
-exit:
-    la a0, tohost
-    li a1, 1
-    sd a1, 0(a0)
-    auipc t0, 0
-    jr 4(t0)
+#include "_exit.S"
 
 .section .data, "aw", @progbits
 .align 3
 var0: .word 0xffffffff80025059
 var1: .word 0xffffffff80025058
 var2: .dword 0xffffffff80025057
-
-.section .tohost, "aw", @progbits
-.align 3
-.globl tohost
-
-tohost:
-    .dword 0
-
-.align 3
-.globl fromhost
-
-fromhost:
-    .dword 0
