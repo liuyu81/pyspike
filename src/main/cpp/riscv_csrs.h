@@ -20,7 +20,9 @@
 
 #include <riscv/csrs.h>
 
-class py_csr_t : public csr_t, public std::enable_shared_from_this<csr_t> {
+class py_csr_t : public csr_t,
+                 public std::enable_shared_from_this<csr_t>,
+                 public pybind11::trampoline_self_life_support {
 public:
   py_csr_t(processor_t *const proc, const reg_t addr);
 

@@ -18,28 +18,35 @@ from typing import List
 import pytest
 # pylint: disable=import-error,no-name-in-module
 from riscv import isa
+from riscv.csrs import csr_t
 from riscv.disasm import disasm_insn_t
 from riscv.extension import extension_t, register_extension, find_extension
-from riscv.processor import insn_desc_t
+from riscv.processor import insn_desc_t, processor_t
 
 
+# pylint: disable=unused-argument
 class MyCFlush(isa.ISA):
 
     @property
     def name(self) -> str:
         return "my_cflush"
 
-    def get_instructions(self) -> List[insn_desc_t]:
+    def get_instructions(self, proc: processor_t) -> List[insn_desc_t]:
         return []
 
-    def get_disasms(self) -> List[disasm_insn_t]:
+    def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return []
 
-    def reset(self):
-        pass
+    def get_csrs(self, proc: processor_t) -> List[csr_t]:
+        return []
 
-    def set_debug(self, value: bool):
-        pass
+    # pylint: disable=useless-parent-delegation
+    def reset(self, proc: processor_t):
+        super().reset(proc)
+
+    # pylint: disable=useless-parent-delegation
+    def set_debug(self, value: bool, proc: processor_t):
+        super().set_debug(value, proc)
 
 
 class MyDummyROCC(isa.ROCC):
@@ -53,7 +60,9 @@ class MyDummyROCC(isa.ROCC):
     pytest.param("cflush", extension_t, 3, 3, id="cflush"),
     pytest.param("dummy_rocc", extension_t, 4, 0, id="dummy_rocc"),
 ])
-def test_find_extension(name, cls, n_insn, n_disasm):
+def test_find_extension(mock_sim, name, cls, n_insn, n_disasm):
+    p: processor_t = mock_sim.get_core(0)
+    p.reset()
     # lookup
     ext_ctor = find_extension(name)
     assert ext_ctor is not None
@@ -61,22 +70,26 @@ def test_find_extension(name, cls, n_insn, n_disasm):
     ext = ext_ctor()
     assert isinstance(ext, cls)
     # instructions
-    all_insn = ext.get_instructions()
+    all_insn = ext.get_instructions(p)
     assert len(all_insn) == n_insn
     for this_insn in all_insn:
         assert isinstance(this_insn, insn_desc_t)
     # disasms
-    all_disasm = ext.get_disasms()
+    all_disasm = ext.get_disasms(p)
     assert len(all_disasm) == n_disasm
     for disasm in all_disasm:
         assert isinstance(disasm, disasm_insn_t)
+    # reset
+    ext.reset(p)
 
 
 @pytest.mark.parametrize("name,cls,n_insn,n_disasm", [
     pytest.param("my_cflush", MyCFlush, 0, 0, id="my_cflush"),
     pytest.param("my_dummy_rocc", MyDummyROCC, 4, 0, id="my_dummy_rocc"),
 ])
-def test_register_extension(name, cls, n_insn, n_disasm):
+def test_register_extension(mock_sim, name, cls, n_insn, n_disasm):
+    p: processor_t = mock_sim.get_core(0)
+    p.reset()
     # register
     register_extension(name, cls)
     # lookup
@@ -87,12 +100,14 @@ def test_register_extension(name, cls, n_insn, n_disasm):
     assert isinstance(ext, cls)
     assert ext.name == name
     # instructions
-    all_insn = ext.get_instructions()
+    all_insn = ext.get_instructions(p)
     assert len(all_insn) == n_insn
     for this_insn in all_insn:
         assert isinstance(this_insn, insn_desc_t)
     # disasms
-    all_disasm = ext.get_disasms()
+    all_disasm = ext.get_disasms(p)
     assert len(all_disasm) == n_disasm
     for disasm in all_disasm:
         assert isinstance(disasm, disasm_insn_t)
+    # reset
+    ext.reset(p)

@@ -45,7 +45,6 @@
 
 namespace py = pybind11;
 
-
 PYBIND11_MODULE(_riscv, m) {
 
   m.doc() = "Python Bindings of Spike RISC-V ISA Simulator";
@@ -77,7 +76,7 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_csrs = m.def_submodule("csrs");
 
-    py::class_<csr_t, py_csr_t>(mod_csrs, "csr_t")
+    py::class_<csr_t, py_csr_t, py::smart_holder>(mod_csrs, "csr_t")
         .def(py::init([](processor_t *const proc, const reg_t addr) {
                return new py_csr_t(proc, addr);
              }),
@@ -95,11 +94,11 @@ PYBIND11_MODULE(_riscv, m) {
         .def_readonly("state", &py_csr_t::state,
                       py::return_value_policy::reference_internal);
 
-    py::class_<basic_csr_t, csr_t>(mod_csrs, "basic_csr_t")
+    py::class_<basic_csr_t, csr_t, py::smart_holder>(mod_csrs, "basic_csr_t")
         .def(py::init<processor_t *const, const reg_t, const reg_t>(),
              py::arg("proc"), py::arg("addr"), py::arg("value"));
 
-    py::class_<proxy_csr_t, csr_t>(mod_csrs, "proxy_csr_t")
+    py::class_<proxy_csr_t, csr_t, py::smart_holder>(mod_csrs, "proxy_csr_t")
         .def(py::init([](processor_t *const proc, const reg_t addr,
                          py::object py_csr) {
                auto raw_csr =
@@ -108,7 +107,7 @@ PYBIND11_MODULE(_riscv, m) {
              }),
              py::arg("proc"), py::arg("addr"), py::arg("delegate"));
 
-    py::class_<const_csr_t, csr_t>(mod_csrs, "const_csr_t")
+    py::class_<const_csr_t, csr_t, py::smart_holder>(mod_csrs, "const_csr_t")
         .def(py::init<processor_t *const, const reg_t, reg_t>(),
              py::arg("proc"), py::arg("addr"), py::arg("val"));
   }
@@ -117,7 +116,8 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_debug_module = m.def_submodule("debug_module");
 
-    py::class_<debug_module_config_t>(mod_debug_module, "debug_module_config_t")
+    py::class_<debug_module_config_t, py::smart_holder>(mod_debug_module,
+                                                        "debug_module_config_t")
         .def(py::init())
         .def_readwrite("progbufsize", &debug_module_config_t::progbufsize)
         .def_readwrite("max_sba_data_width",
@@ -140,19 +140,20 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_devices = m.def_submodule("devices");
 
-    py::class_<abstract_device_t, py_abstract_device_t>(mod_devices,
-                                                        "abstract_device_t")
+    py::class_<abstract_device_t, py_abstract_device_t, py::smart_holder>(
+        mod_devices, "abstract_device_t")
         .def(py::init())
         .def("load", &py_mmio_load)
         .def("store", &py_mmio_store)
+        .def("size", &py_mmio_size)
         .def("tick", &abstract_device_t::tick)
         .def("__repr__", [](const abstract_device_t &self) {
           return "<riscv._riscv.devices.abstract_device_t object at " +
                  format_ptr(&self) + ">";
         });
 
-    py::class_<device_factory_t, py_device_factory_t>(mod_devices,
-                                                      "device_factory_t")
+    py::class_<device_factory_t, py_device_factory_t, py::smart_holder>(
+        mod_devices, "device_factory_t")
         .def(py::init())
         .def("parse_from_fdt", &py_mmio_parse_from_fdt)
         .def("generate_dts", &py_mmio_generate_dts)
@@ -161,27 +162,30 @@ PYBIND11_MODULE(_riscv, m) {
                  format_ptr(&self) + ">";
         });
 
-    py::class_<abstract_interrupt_controller_t>(
+    py::class_<abstract_interrupt_controller_t, py::smart_holder>(
         mod_devices, "abstract_interrupt_controller_t")
         .def("set_interrupt_level",
              &abstract_interrupt_controller_t::set_interrupt_level);
 
-    py::class_<bus_t, abstract_device_t>(mod_devices, "bus_t")
+    py::class_<bus_t, abstract_device_t, py::smart_holder>(mod_devices, "bus_t")
         .def("find_device", &bus_t::find_device);
 
-    py::class_<rom_device_t, abstract_device_t>(mod_devices, "rom_device_t")
+    py::class_<rom_device_t, abstract_device_t, py::smart_holder>(
+        mod_devices, "rom_device_t")
         .def(py::init<std::vector<char>>(), py::arg("data"));
 
-    py::class_<abstract_mem_t, abstract_device_t>(mod_devices,
-                                                  "abstract_mem_t");
+    py::class_<abstract_mem_t, abstract_device_t, py::smart_holder>(
+        mod_devices, "abstract_mem_t");
 
-    py::class_<mem_t, abstract_mem_t>(mod_devices, "mem_t")
+    py::class_<mem_t, abstract_mem_t, py::smart_holder>(mod_devices, "mem_t")
         .def(py::init<reg_t>(), py::arg("size"));
 
-    py::class_<clint_t, abstract_device_t>(mod_devices, "clint_t");
+    py::class_<clint_t, abstract_device_t, py::smart_holder>(mod_devices,
+                                                             "clint_t");
 
-    py::class_<plic_t, abstract_device_t, abstract_interrupt_controller_t>(
-        mod_devices, "plic_t", py::multiple_inheritance());
+    py::class_<plic_t, abstract_device_t, abstract_interrupt_controller_t,
+               py::smart_holder>(mod_devices, "plic_t",
+                                 py::multiple_inheritance());
 
     py::class_<py_mmio_factory_map_t>(mod_devices, "mmio_factory_map_t")
         .def("__len__", &py_mmio_factory_map_t::len)
@@ -239,6 +243,10 @@ PYBIND11_MODULE(_riscv, m) {
                                      reinterpret_cast<const char *>(&bits),
                                      self.length());
                                })
+        .def_property_readonly("opcode", &insn_t::opcode)
+        .def_property_readonly("funct7", &insn_t::funct7)
+        .def_property_readonly("funct3", &insn_t::funct3)
+        .def_property_readonly("funct2", &insn_t::funct2)
         .def_property_readonly("i_imm", &insn_t::i_imm)
         .def_property_readonly("shamt", &insn_t::shamt)
         .def_property_readonly("s_imm", &insn_t::s_imm)
@@ -255,6 +263,7 @@ PYBIND11_MODULE(_riscv, m) {
         .def_property_readonly("bs", &insn_t::bs)
         .def_property_readonly("rcon", &insn_t::rcon)
 
+        .def_property_readonly("rvc_opcode", &insn_t::rvc_opcode)
         .def_property_readonly("rvc_imm", &insn_t::rvc_imm)
         .def_property_readonly("rvc_zimm", &insn_t::rvc_zimm)
         .def_property_readonly("rvc_addi4spn_imm", &insn_t::rvc_addi4spn_imm)
@@ -283,6 +292,31 @@ PYBIND11_MODULE(_riscv, m) {
         .def_property_readonly("rvc_spimm", &insn_t::rvc_spimm)
 
         .def_property_readonly("rvc_index", &insn_t::rvc_index)
+
+        .def_property_readonly("v_vm", &insn_t::v_vm)
+        .def_property_readonly("v_wd", &insn_t::v_wd)
+        .def_property_readonly("v_nf", &insn_t::v_nf)
+        .def_property_readonly("v_simm5", &insn_t::v_simm5)
+        .def_property_readonly("v_zimm5", &insn_t::v_zimm5)
+        .def_property_readonly("v_zimm10", &insn_t::v_zimm10)
+        .def_property_readonly("v_zimm11", &insn_t::v_zimm11)
+        .def_property_readonly("v_lmul", &insn_t::v_lmul)
+        .def_property_readonly("v_frac_lmul", &insn_t::v_frac_lmul)
+        .def_property_readonly("v_sew", &insn_t::v_sew)
+        .def_property_readonly("v_width", &insn_t::v_width)
+        .def_property_readonly("v_mop", &insn_t::v_mop)
+        .def_property_readonly("v_lumop", &insn_t::v_lumop)
+        .def_property_readonly("v_sumop", &insn_t::v_sumop)
+        .def_property_readonly("v_vta", &insn_t::v_vta)
+        .def_property_readonly("v_vma", &insn_t::v_vma)
+        .def_property_readonly("v_mew", &insn_t::v_mew)
+        .def_property_readonly("v_zimm6", &insn_t::v_zimm6)
+
+        .def_property_readonly("p_imm2", &insn_t::p_imm2)
+        .def_property_readonly("p_imm3", &insn_t::p_imm3)
+        .def_property_readonly("p_imm4", &insn_t::p_imm4)
+        .def_property_readonly("p_imm5", &insn_t::p_imm5)
+        .def_property_readonly("p_imm6", &insn_t::p_imm6)
 
         .def("__len__", &insn_t::length)
         .def("__eq__",
@@ -367,35 +401,42 @@ PYBIND11_MODULE(_riscv, m) {
             "funct",
             [](const rocc_insn_t &self) -> unsigned { return self.funct; });
 
-    py::class_<extension_t, py_extension_t>(mod_extension, "extension_t")
+    py::class_<extension_t, py_extension_t, py::smart_holder>(mod_extension,
+                                                              "extension_t")
         .def(py::init())
         // extension_t members
-        .def("get_instructions", &extension_t::get_instructions)
-        .def("get_disasms", &extension_t::get_disasms)
+        .def("get_instructions", &extension_t::get_instructions,
+             py::arg("proc"))
+        .def("get_disasms", &extension_t::get_disasms, py::arg("proc"))
+        .def("get_csrs", &extension_t::get_csrs, py::arg("proc"))
         .def_property_readonly("name", &extension_t::name)
-        .def("reset", &extension_t::reset)
-        .def("set_debug", &extension_t::set_debug, py::arg("value"))
-        .def("set_processor", &extension_t::set_processor, py::arg("_p"))
+        .def("reset", &extension_t::reset, py::arg("proc"))
+        .def("set_debug", &extension_t::set_debug, py::arg("value"),
+             py::arg("proc"))
         // extension_t protected members
-        .def_readonly("p", &py_extension_t::p,
-                      py::return_value_policy::reference_internal)
-        .def("illegal_instruction", &py_extension_t::illegal_instruction)
-        .def("raise_interrupt", &py_extension_t::raise_interrupt)
-        .def("clear_interrupt", &py_extension_t::clear_interrupt);
+        .def("illegal_instruction", &py_extension_t::illegal_instruction,
+             py::arg("proc"))
+        .def("raise_interrupt", &py_extension_t::raise_interrupt,
+             py::arg("proc"))
+        .def("clear_interrupt", &py_extension_t::clear_interrupt,
+             py::arg("proc"));
 
-    py::class_<rocc_t, py_rocc_t, extension_t>(mod_extension, "rocc_t")
+    py::class_<rocc_t, py_rocc_t, extension_t, py::smart_holder>(mod_extension,
+                                                                 "rocc_t")
         .def(py::init())
         // rocc_t members
-        .def("custom0", &rocc_t::custom0, py::arg("insn"), py::arg("xs1"),
-             py::arg("xs2"))
-        .def("custom1", &rocc_t::custom1, py::arg("insn"), py::arg("xs1"),
-             py::arg("xs2"))
-        .def("custom2", &rocc_t::custom2, py::arg("insn"), py::arg("xs1"),
-             py::arg("xs2"))
-        .def("custom3", &rocc_t::custom3, py::arg("insn"), py::arg("xs1"),
-             py::arg("xs2"))
-        .def("get_instructions", &rocc_t::get_instructions)
-        .def("get_disasms", &rocc_t::get_disasms)
+        .def("custom0", &rocc_t::custom0, py::arg("proc"), py::arg("insn"),
+             py::arg("xs1"), py::arg("xs2"))
+        .def("custom1", &rocc_t::custom1, py::arg("proc"), py::arg("insn"),
+             py::arg("xs1"), py::arg("xs2"))
+        .def("custom2", &rocc_t::custom2, py::arg("proc"), py::arg("insn"),
+             py::arg("xs1"), py::arg("xs2"))
+        .def("custom3", &rocc_t::custom3, py::arg("proc"), py::arg("insn"),
+             py::arg("xs1"), py::arg("xs2"))
+        // extension_t members
+        .def("get_instructions", &rocc_t::get_instructions, py::arg("proc"))
+        .def("get_disasms", &rocc_t::get_disasms, py::arg("proc"))
+        .def("get_csrs", &rocc_t::get_csrs, py::arg("proc"))
         .def_property_readonly("name", &rocc_t::name);
 
     mod_extension.def("find_extension", &find_extension, py::arg("name"))
@@ -421,7 +462,7 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zcb", isa_extension_t::EXT_ZCB)
         .value("zcd", isa_extension_t::EXT_ZCD)
         .value("zcf", isa_extension_t::EXT_ZCF)
-        .value("zcmlsd", isa_extension_t::EXT_ZCMLSD)
+        .value("zclsd", isa_extension_t::EXT_ZCLSD)
         .value("zcmp", isa_extension_t::EXT_ZCMP)
         .value("zcmt", isa_extension_t::EXT_ZCMT)
         .value("zknd", isa_extension_t::EXT_ZKND)
@@ -438,6 +479,7 @@ PYBIND11_MODULE(_riscv, m) {
         .value("smrnmi", isa_extension_t::EXT_SMRNMI)
         .value("sscofpmf", isa_extension_t::EXT_SSCOFPMF)
         .value("svadu", isa_extension_t::EXT_SVADU)
+        .value("svade", isa_extension_t::EXT_SVADE)
         .value("svnapot", isa_extension_t::EXT_SVNAPOT)
         .value("svpbmt", isa_extension_t::EXT_SVPBMT)
         .value("svinval", isa_extension_t::EXT_SVINVAL)
@@ -447,6 +489,7 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zfinx", isa_extension_t::EXT_ZFINX)
         .value("zhinx", isa_extension_t::EXT_ZHINX)
         .value("zhinxmin", isa_extension_t::EXT_ZHINXMIN)
+        .value("ziccid", isa_extension_t::EXT_ZICCID)
         .value("zicbom", isa_extension_t::EXT_ZICBOM)
         .value("zicboz", isa_extension_t::EXT_ZICBOZ)
         .value("zicntr", isa_extension_t::EXT_ZICNTR)
@@ -463,6 +506,11 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zvknhb", isa_extension_t::EXT_ZVKNHB)
         .value("zvksed", isa_extension_t::EXT_ZVKSED)
         .value("zvksh", isa_extension_t::EXT_ZVKSH)
+        .value("zvqdotq", isa_extension_t::EXT_ZVQDOTQ)
+        .value("zvqbdot8i", isa_extension_t::EXT_ZVQBDOT8I)
+        .value("zvqbdot16i", isa_extension_t::EXT_ZVQBDOT16I)
+        .value("zvfwdot16bf", isa_extension_t::EXT_ZVFWBDOT16BF)
+        .value("zvfbdot32f", isa_extension_t::EXT_ZVFBDOT32F)
         .value("sstc", isa_extension_t::EXT_SSTC)
         .value("zaamo", isa_extension_t::EXT_ZAAMO)
         .value("zalrsc", isa_extension_t::EXT_ZALRSC)
@@ -471,6 +519,8 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zawrs", isa_extension_t::EXT_ZAWRS)
         .value("smcsrind", isa_extension_t::EXT_SMCSRIND)
         .value("sscsrind", isa_extension_t::EXT_SSCSRIND)
+        .value("smcdeleg", isa_extension_t::EXT_SMCDELEG)
+        .value("ssccfg", isa_extension_t::EXT_SSCCFG)
         .value("smcntrpmf", isa_extension_t::EXT_SMCNTRPMF)
         .value("zimop", isa_extension_t::EXT_ZIMOP)
         .value("zcmop", isa_extension_t::EXT_ZCMOP)
@@ -479,6 +529,12 @@ PYBIND11_MODULE(_riscv, m) {
         .value("zicfilp", isa_extension_t::EXT_ZICFILP)
         .value("zicfiss", isa_extension_t::EXT_ZICFISS)
         .value("ssdbltrp", isa_extension_t::EXT_SSDBLTRP)
+        .value("smdbltrp", isa_extension_t::EXT_SMDBLTRP)
+        .value("smmpm", isa_extension_t::EXT_SMMPM)
+        .value("smnpm", isa_extension_t::EXT_SMNPM)
+        .value("ssnpm", isa_extension_t::EXT_SSNPM)
+        .value("smaia", isa_extension_t::EXT_SMAIA)
+        .value("ssaia", isa_extension_t::EXT_SSAIA)
         .export_values();
 
     py::enum_<impl_extension_t>(mod_isa_parser, "impl_extension_t")
@@ -524,13 +580,19 @@ PYBIND11_MODULE(_riscv, m) {
         // load_reserved
         .def("load_reserved", &mmu_t::load_reserved<int32_t>, py::arg("addr"))
         .def("load_reserved", &mmu_t::load_reserved<int64_t>, py::arg("addr"))
-        .def("load_reserved_32", &mmu_t::load_reserved<int32_t>, py::arg("addr"))
-        .def("load_reserved_64", &mmu_t::load_reserved<int64_t>, py::arg("addr"))
+        .def("load_reserved_32", &mmu_t::load_reserved<int32_t>,
+             py::arg("addr"))
+        .def("load_reserved_64", &mmu_t::load_reserved<int64_t>,
+             py::arg("addr"))
         // store_conditional
-        .def("store_conditional", &mmu_t::store_conditional<uint32_t>, py::arg("addr"), py::arg("val"))
-        .def("store_conditional", &mmu_t::store_conditional<uint64_t>, py::arg("addr"), py::arg("val"))
-        .def("store_conditional_32", &mmu_t::store_conditional<uint32_t>, py::arg("addr"), py::arg("val"))
-        .def("store_conditional_64", &mmu_t::store_conditional<uint64_t>, py::arg("addr"), py::arg("val"));
+        .def("store_conditional", &mmu_t::store_conditional<uint32_t>,
+             py::arg("addr"), py::arg("val"))
+        .def("store_conditional", &mmu_t::store_conditional<uint64_t>,
+             py::arg("addr"), py::arg("val"))
+        .def("store_conditional_32", &mmu_t::store_conditional<uint32_t>,
+             py::arg("addr"), py::arg("val"))
+        .def("store_conditional_64", &mmu_t::store_conditional<uint64_t>,
+             py::arg("addr"), py::arg("val"));
   }
 
   // riscv.processor
@@ -556,8 +618,10 @@ PYBIND11_MODULE(_riscv, m) {
         .def("__contains__", &py_commit_log_reg_t::contains)
         .def("__getitem__", &py_commit_log_reg_t::getitem,
              py::return_value_policy::reference)
-        .def("__setitem__", py::overload_cast<reg_t, freg_t>(&py_commit_log_reg_t::setitem))
-        .def("__setitem__", py::overload_cast<reg_t, py::tuple>(&py_commit_log_reg_t::setitem))
+        .def("__setitem__",
+             py::overload_cast<reg_t, freg_t>(&py_commit_log_reg_t::setitem))
+        .def("__setitem__",
+             py::overload_cast<reg_t, py::tuple>(&py_commit_log_reg_t::setitem))
         .def("__delitem__", &py_commit_log_reg_t::delitem)
         .def("__repr__", &py_commit_log_reg_t::repr);
 
@@ -586,15 +650,24 @@ PYBIND11_MODULE(_riscv, m) {
         .def_readonly("last_inst_xlen", &state_t::last_inst_xlen)
         .def_readonly("last_inst_flen", &state_t::last_inst_flen)
         // commit logs
-        .def_property_readonly("log_reg_write", [](state_t& self) {
-            return new py_commit_log_reg_t(self.log_reg_write);
-        }, py::return_value_policy::reference_internal)
-        .def_property_readonly("log_mem_read",[](state_t& self) {
-            return new py_commit_log_mem_t(self.log_mem_read);
-        }, py::return_value_policy::reference_internal)
-        .def_property_readonly("log_mem_write", [](state_t& self) {
-            return new py_commit_log_mem_t(self.log_mem_write);
-        }, py::return_value_policy::reference_internal)
+        .def_property_readonly(
+            "log_reg_write",
+            [](state_t &self) {
+              return new py_commit_log_reg_t(self.log_reg_write);
+            },
+            py::return_value_policy::reference_internal)
+        .def_property_readonly(
+            "log_mem_read",
+            [](state_t &self) {
+              return new py_commit_log_mem_t(self.log_mem_read);
+            },
+            py::return_value_policy::reference_internal)
+        .def_property_readonly(
+            "log_mem_write",
+            [](state_t &self) {
+              return new py_commit_log_mem_t(self.log_mem_write);
+            },
+            py::return_value_policy::reference_internal)
         // state_t methods
         .def(
             "add_csr",
@@ -606,7 +679,7 @@ PYBIND11_MODULE(_riscv, m) {
             py::arg("addr"), py::arg("csr"))
         .def("reset", &state_t::reset, py::arg("proc"), py::arg("max_isa"));
 
-    py::class_<processor_t>(mod_processor, "processor_t")
+    py::class_<processor_t, py::smart_holder>(mod_processor, "processor_t")
         .def_property_readonly("id", &processor_t::get_id)
         // csr
         .def("get_csr",
@@ -617,7 +690,7 @@ PYBIND11_MODULE(_riscv, m) {
              py::arg("which"))
         .def("put_csr", &processor_t::put_csr, py::arg("which"), py::arg("val"))
         // mmu
-        .def_property_readonly("mmu", &processor_t::get_mmu, 
+        .def_property_readonly("mmu", &processor_t::get_mmu,
                                py::return_value_policy::reference_internal)
         // state
         .def_property_readonly("state", &processor_t::get_state,
@@ -809,7 +882,7 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_htif = m.def_submodule("htif");
 
-    py::class_<htif_t>(mod_htif, "htif_t")
+    py::class_<htif_t, py::smart_holder>(mod_htif, "htif_t")
         .def_property_readonly("tohost_addr", &htif_t::get_tohost_addr)
         .def_property_readonly("fromhost_addr", &htif_t::get_fromhost_addr);
   }
@@ -818,15 +891,15 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_simif = m.def_submodule("simif");
 
-    py::class_<simif_t>(mod_simif, "simif_t");
+    py::class_<simif_t, py::smart_holder>(mod_simif, "simif_t");
   }
 
   // riscv.sim
   {
     auto mod_sim = m.def_submodule("sim");
 
-    py::class_<sim_t, py_sim_t, htif_t, simif_t>(mod_sim, "sim_t",
-                                                 py::multiple_inheritance())
+    py::class_<sim_t, py_sim_t, htif_t, simif_t, py::smart_holder>(
+        mod_sim, "sim_t", py::multiple_inheritance())
         .def(py::init(&py_sim_t::create), py::kw_only(), py::arg("cfg"),
              py::arg("halted"), py::arg("plugin_device_factories"),
              py::arg("args"), py::arg("dm_config"))
@@ -852,6 +925,7 @@ PYBIND11_MODULE(_riscv, m) {
                  py::arg("addr"), py::arg("len"));
     mod_test.def("_test_mmio_store", &py_mmio_store, py::arg("device"),
                  py::arg("addr"), py::arg("data"));
+    mod_test.def("_test_mmio_size", &py_mmio_size, py::arg("device"));
     mod_test.def("_test_mmio_tick", &py_mmio_tick, py::arg("device"),
                  py::arg("rtc_ticks"));
 

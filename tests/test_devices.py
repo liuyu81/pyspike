@@ -117,6 +117,7 @@ def test_mmio_device_map(mock_sim, name, sargs, fact_cls, dev_cls):
     del mmio_device_map[name]   # idempotent of deletion
 
 
+@pytest.mark.skip(reason="spike doesn't expose builtin devices since #2042 (8da8b6a)")
 @pytest.mark.parametrize("name", [
     "clint", "plic", "ns16550"
 ])
@@ -125,6 +126,7 @@ def test_mmio_device_map_builtin(name):
     assert isinstance(mmio_device_map[name], device_factory_t)
 
 
+@pytest.mark.skip(reason="spike doesn't expose builtin devices since #2042 (8da8b6a)")
 @pytest.mark.parametrize("name,sargs,dts", [
     pytest.param("clint", (), """    clint@2000000 {
       compatible = "riscv,clint0";

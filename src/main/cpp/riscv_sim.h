@@ -26,7 +26,7 @@
 #include "riscv_cfg.h"
 
 // trampoline helper class for extending sim_t
-class py_sim_t : public sim_t {
+class py_sim_t : public sim_t, pybind11::trampoline_self_life_support {
 public:
   using sim_t::sim_t;
 

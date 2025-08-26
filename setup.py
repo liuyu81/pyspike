@@ -43,7 +43,7 @@ module = Pybind11Extension(
     extra_link_args=[
         f"-Wl,-rpath,{RISCV}/lib",
         f"-L{RISCV}/lib",
-        "-lcustomext",
+        "-lriscv",
     ],
     include_dirs=[
         "src/main/cpp",

@@ -1,7 +1,7 @@
 auditwheel
 build
 pip
-pybind11[global]
+pybind11[global]>3
 twine
 patchelf
 pexpect

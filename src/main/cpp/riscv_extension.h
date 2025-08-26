@@ -28,40 +28,47 @@
 #include <pybind11/stl.h>
 
 // trampoline helper class for extending extension_t
-class py_extension_t : public extension_t {
+class py_extension_t : public extension_t,
+                       public pybind11::trampoline_self_life_support {
 public:
   using extension_t::extension_t;
 
 public:
-  virtual std::vector<insn_desc_t> get_instructions() override;
-  virtual std::vector<disasm_insn_t *> get_disasms() override;
+  virtual std::vector<insn_desc_t>
+  get_instructions(const processor_t &proc) override;
+  virtual std::vector<disasm_insn_t *>
+  get_disasms(const processor_t *proc = nullptr) override;
+  virtual std::vector<csr_t_p> get_csrs(processor_t &proc) const override;
 
 public:
-  virtual const char *name() override;
-  virtual void reset() override;
-  virtual void set_debug(bool UNUSED value) override;
+  virtual const char *name() const override;
+  virtual void reset(processor_t &proc) override;
+  virtual void set_debug(bool UNUSED value, const processor_t &proc) override;
 
 public:
   // make protected members accessible from python
   using extension_t::clear_interrupt;
   using extension_t::illegal_instruction;
-  using extension_t::p;
   using extension_t::raise_interrupt;
 };
 
 // trampoline helper class for extending rocc_t
-class py_rocc_t : public rocc_t {
+class py_rocc_t : public rocc_t, public pybind11::trampoline_self_life_support {
 public:
   using rocc_t::rocc_t;
 
 public:
-  virtual reg_t custom0(rocc_insn_t insn, reg_t xs1, reg_t xs2) override;
-  virtual reg_t custom1(rocc_insn_t insn, reg_t xs1, reg_t xs2) override;
-  virtual reg_t custom2(rocc_insn_t insn, reg_t xs1, reg_t xs2) override;
-  virtual reg_t custom3(rocc_insn_t insn, reg_t xs1, reg_t xs2) override;
+  virtual reg_t custom0(processor_t *proc, rocc_insn_t insn, reg_t xs1,
+                        reg_t xs2) override;
+  virtual reg_t custom1(processor_t *proc, rocc_insn_t insn, reg_t xs1,
+                        reg_t xs2) override;
+  virtual reg_t custom2(processor_t *proc, rocc_insn_t insn, reg_t xs1,
+                        reg_t xs2) override;
+  virtual reg_t custom3(processor_t *proc, rocc_insn_t insn, reg_t xs1,
+                        reg_t xs2) override;
 
 public:
-  virtual const char *name() override;
+  virtual const char *name() const override;
 };
 
 // helper for Python -> C++ -> Python calls to `register_extension`
