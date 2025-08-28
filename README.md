@@ -86,19 +86,13 @@ class MyDEV(dev.MMIO):
 ```bash
 $ python -m venv .venv
 $ source .venv/bin/activate
-(.venv) $ pip install -r requirements.txt
-```
-
-### Compile
-
-```bash
-(.venv) $ python setup.py build_ext --inplace
+(.venv) $ python -m pip install -e '.[dev]'
 ```
 
 ### Test
 
 ```bash
-(.venv) $ pytest -v
+(.venv) $ python -m pytest -v
 ```
 
 ### Package
