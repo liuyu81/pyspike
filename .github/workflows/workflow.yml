@@ -36,23 +36,15 @@ jobs:
     - name: Fetch tags
       run: |
         git fetch --tags origin
-    - name: Setup spike
-      run: |
-        sudo apt install -y build-essential device-tree-compiler libboost-all-dev
-        cd vendor/spike
-        ./configure --prefix=$RISCV --with-boost-asio
-        make -j$(nproc)
-        make check
-        sudo make install
     - name: Setup 🐍 ${{ matrix.python }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - name: Run lint and test
+    - name: Build and test
       run: |
         python -m pip install -e '.[dev]'
         python -m pytest -v
-    - name: Build wheel package
+    - name: Package wheels
       run: |
         python -m build
         twine check dist/spike-*

@@ -18,7 +18,7 @@ authors = [
 ]
 license = {file = "LICENSE"}
 description = "Python Bindings of Spike RISC-V ISA Simulator"
-readme = {file = "README.txt", content-type = "text/markdown"}
+readme = {file = "README.md", content-type = "text/markdown"}
 keywords = ["RISC-V", "spike", "ISA", "simulator", "verification"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -75,7 +75,10 @@ dev = [
 ]
 
 [tool.setuptools]
-script-files = ["scripts/pyspike"]
+script-files = [
+  "scripts/spike",
+  "scripts/pyspike"
+]
 
 [tool.setuptools.packages.find]
 where = [
@@ -83,6 +86,16 @@ where = [
 ]
 include = [
   "riscv"
+]
+
+[tool.setuptools.package-data]
+riscv = [
+  "data/bin/spike",
+  "data/include/**/*.h",
+  "data/lib/libdisasm.a",
+  "data/lib/libfesvr.a",
+  "data/lib/libriscv.so",
+  "data/lib/pkgconfig/*.pc"
 ]
 
 [tool.setuptools_scm]

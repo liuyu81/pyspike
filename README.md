@@ -32,7 +32,7 @@ Spike RISC-V ISA Simulator 1.1.1-dev
 
 There is also a 100%-compatible command-line wrapper called `pyspike`, with additional support for Python-based ISA / MMIO / RoCC extensions via `--extlib=<name>`.
 
-```bash
+```shell
 $ pyspike \
     --isa=rv32imc_xmyisa --priv=m \
     --pc=0x90000000 \
@@ -46,7 +46,7 @@ Hello, World!
 
 ### Quick ISA Extension
 
-An ISA extension in PySpike is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, while the latter provides their disassemblers. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
+An ISA extension in PySpike is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, and the latter provides their disassemblers. Other optional methods include `get_csrs` and `reset`, for providing custom *control state registers* （CSRs) and resetting extension states, respectively. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
 
 ```python
 from typing import List
@@ -59,12 +59,13 @@ class MyISA(isa.ISA):
     def __init__(self): ...
     def get_instructions(self) -> List[insn_desc_t]: ...
     def get_disasms(self) -> List[disasm_insn_t]: ...
+    def get_csrs(self) -> List[csr_t]: ...
     def reset(self) -> None: ...
 ```
 
 ### Quick Device Model
 
-Likewise to the ISA extension, an MMIO model in PySpike is a class that inherits `riscv.dev.MMIO`. It should implement a minimum of three methods: `__init__`, `load`, and `store`. The former initializes the model, the latter two handle memory read and write operations. Use decorator `@dev.register("mydev")` to register the model under the name `mydev`.
+Likewise to the ISA extension, an MMIO model in PySpike is a class that inherits `riscv.dev.MMIO`. It should implement a minimum of three methods: `__init__`, `load`, and `store`. The former initializes the model, the latter two handle memory read and write operations. Other optional methods include `size` and `tick`, for obtaining the size of memory-mapped address space, and shifting device states, respectively. Use decorator `@dev.register("mydev")` to register the model under the name `mydev`.
 
 ```python
 from typing import Optional
@@ -76,27 +77,35 @@ class MyDEV(dev.MMIO):
     def __init__(self, sim: sim_t, args: Optional[str] = None): ...
     def load(self, addr: int, size: int) -> bytes: ...
     def store(self, addr: int, data: bytes) -> None: ...
+    def size(self) -> int: ...
     def tick(self, rtc_ticks: int) -> None:
 ```
 
 ## Development
 
-### Setup
+### Getting Source Code
 
-```bash
+```shell
+$ git clone --recurse-submodules https://github.com/huimtlab/pyspike
+$ cd pyspike
+```
+
+### Setting Up Develop Environment
+
+```shell
 $ python -m venv .venv
 $ source .venv/bin/activate
 (.venv) $ python -m pip install -e '.[dev]'
 ```
 
-### Test
+### Running Tests
 
-```bash
+```shell
 (.venv) $ python -m pytest -v
 ```
 
-### Package
+### Packaging
 
-```bash
+```shell
 (.venv) $ python -m build
 ```
