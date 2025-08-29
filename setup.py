@@ -47,10 +47,10 @@ bridge_module = Pybind11Extension(
         r"-Wl,-rpath,$ORIGIN/data/lib",
         f"-Wl,-rpath,{RISCV}/lib",
         f"-Lsrc/main/python/{package.__name__}/data/lib",
-        r"-lriscv",
+        "-lriscv",
     ],
     include_dirs=[
-        r"src/main/cpp",
+        "src/main/cpp",
         f"src/main/python/{package.__name__}/data/include",
         f"{RISCV}/include",
     ]

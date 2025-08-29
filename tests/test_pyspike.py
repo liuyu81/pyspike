@@ -77,7 +77,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
              "read MSCTLR\r\n"),
     ], 0, id="huimt-msctlr"),
     pytest.param([
-        "--isa=rv64gc_zifencei_zba_zbb_zbs_zicsr_xhuimt",
+        "--isa=rv64gc_zicsr_zifencei_zba_zbb_zbs_xhuimt",
         "--priv=msu",
         "--extlib=" + DATA_DIR.joinpath("instructions").as_posix(),
         "-d",
