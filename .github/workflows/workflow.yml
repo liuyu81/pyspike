@@ -17,12 +17,10 @@ env:
 
 jobs:
   build:
-    name: 🐍 ${{ matrix.python }} • ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: 🐍 ${{ matrix.python }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os:
-          - ubuntu-20.04
         python:
           - "3.8"
           # - "3.9"
