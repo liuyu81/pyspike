@@ -38,7 +38,7 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
 @pytest.mark.parametrize("kwargs,req_resp,ret_code", [
     pytest.param({
         "cfg": cfg_t(
-            isa="rv32imc_zicsr_zifencei",
+            isa="rv32imc_zicsr_zifencei_zba_zbb_zbs",
             priv="m",
             mem_layout=[
                 mem_cfg_t(0x9000_0000, 0x4_0000)

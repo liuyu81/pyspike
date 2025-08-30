@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import List, Set
+from typing import List
 # pylint: disable=import-error,no-name-in-module
 from riscv import isa
+from riscv.csrs import csr_t
 from riscv.disasm import disasm_insn_t
-from riscv.processor import insn_desc_t
+from riscv.processor import insn_desc_t, processor_t
 from .mycsrs import MSCTLR
 from .myisas import MyLRSC
 
@@ -33,18 +34,21 @@ class HuiMtISA(isa.ISA):
         super().__init__()
         self.lrsc = MyLRSC()
 
-    def get_instructions(self) -> List[insn_desc_t]:
+    def get_instructions(self, proc: processor_t) -> List[insn_desc_t]:
         return [
-            *self.lrsc.get_instructions()
+            *self.lrsc.get_instructions(proc)
         ]
 
-    def get_disasms(self) -> List[disasm_insn_t]:
+    def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return [
-            *self.lrsc.get_disasms()
+            *self.lrsc.get_disasms(proc)
         ]
 
-    def reset(self) -> None:
-        super().reset()
-        self.lrsc.reset()
-        msctlr = MSCTLR(self.p)
-        self.p.state.add_csr(msctlr.address, msctlr)
+    def get_csrs(self, proc: processor_t) -> List[csr_t]:
+        return [
+            MSCTLR(proc)
+        ]
+
+    def reset(self, proc: processor_t) -> None:
+        super().reset(proc)
+        self.lrsc.reset(proc)

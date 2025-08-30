@@ -72,9 +72,10 @@ def find_spike_executable(path: str = os.defpath) -> pathlib.Path:
     riscv = os.environ.get("RISCV", "/opt/riscv")
     candidates = [
         pathlib.Path(shutil.which("spike", path=path) or "spike"),
-        pathlib.Path(f"{riscv}/bin/spike"),
-        pathlib.Path(f"/usr/bin/spike"),
-        pathlib.Path(f"/usr/local/bin/spike"),
+        pathlib.Path(__file__).parent / "data" / "bin" / "spike",
+        pathlib.Path(riscv) / "bin" / "spike",
+        pathlib.Path("/") / "usr" / "bin" / "spike",
+        pathlib.Path("/") / "usr" / "local" / "bin" / "spike",
     ]
     for exe in candidates:
         if exe.exists() and exe.is_file():
@@ -89,9 +90,10 @@ def find_spike_library(name: str = "riscv") -> pathlib.Path:
     dll_ext = sysconfig.get_config_var('SHLIB_SUFFIX')
     riscv = os.environ.get("RISCV", "/opt/riscv")
     candidates = [
-        pathlib.Path(f"{riscv}/lib/lib{name}{dll_ext}"),
-        pathlib.Path(f"/usr/lib/lib{name}{dll_ext}"),
-        pathlib.Path(f"/usr/local/lib/lib{name}{dll_ext}"),
+        pathlib.Path(__file__).parent / "data" / "lib" / f"lib{name}{dll_ext}",
+        pathlib.Path(riscv) / "lib" / f"lib{name}{dll_ext}",
+        pathlib.Path("/") / "usr" / "lib" / f"lib{name}{dll_ext}",
+        pathlib.Path("/") / "usr" / "local" / "lib" / f"lib{name}{dll_ext}",
     ]
     for lib in candidates:
         if lib.exists():

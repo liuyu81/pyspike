@@ -48,6 +48,10 @@ bool py_abstract_device_t::store(reg_t addr, size_t len, const uint8_t *bytes) {
   return false;
 }
 
+reg_t py_abstract_device_t::size() {
+  PYBIND11_OVERRIDE_PURE(reg_t, abstract_device_t, size);
+}
+
 void py_abstract_device_t::tick(reg_t rtc_ticks) {
   PYBIND11_OVERRIDE_PURE(void, abstract_device_t, tick, rtc_ticks);
 }
@@ -169,6 +173,14 @@ void py_mmio_store(abstract_device_t &device, reg_t addr, py::bytes data) {
                     reinterpret_cast<const uint8_t *>(view.ptr))) {
     throw std::runtime_error("store failed");
   }
+}
+
+reg_t py_mmio_size(abstract_device_t &device) {
+  py::function py_method = py::get_override(&device, "size");
+  if (py_method) {
+    return py::cast<reg_t>(py_method());
+  }
+  throw std::runtime_error("size failed");
 }
 
 void py_mmio_tick(abstract_device_t &device, reg_t rtc_ticks) {

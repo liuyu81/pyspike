@@ -53,6 +53,8 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<const device_factory_t,
                              typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<processor_t,
+                             typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<arg_t,
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<csr_t,
@@ -65,8 +67,8 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<disasm_insn_t,
                              typename std::remove_pointer<T>::type>::value),
-        "T must be abstract_device_t, device_factory_t, arg_t, csr_t, rocc_t, "
-        "extension_t, insn_desc_t, or disasm_insn_t");
+        "T must be abstract_device_t, device_factory_t, processor_t, arg_t, "
+        "csr_t, rocc_t, extension_t, insn_desc_t, or disasm_insn_t");
     T obj = pybind11::cast<T>(py_obj);
     uint64_t addr = reinterpret_cast<uint64_t>(obj);
     if (references.emplace(addr, py_obj).second) {

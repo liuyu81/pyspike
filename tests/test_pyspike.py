@@ -23,7 +23,7 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
 
 @pytest.mark.parametrize("argv,req_resp,ret_code", [
     pytest.param([
-        "--isa=rv32imc_zicsr_zifencei",
+        "--isa=rv32imc_zicsr_zifencei_zba_zbb_zbs",
         "--priv=m",
         "-m0x90000000:0x40000000",
         "--pc=0x90000000",
@@ -52,7 +52,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
 
 @pytest.mark.parametrize("argv,req_resp,ret_code", [
     pytest.param([
-        "--isa=rv64gc_zicsr_xhuimt",
+        "--isa=rv64gc_zicsr_zifencei_zba_zbb_zbs_xhuimt",
         "--priv=msu",
         "--extlib=" + DATA_DIR.joinpath("instructions").as_posix(),
         "-d",
@@ -77,7 +77,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
              "read MSCTLR\r\n"),
     ], 0, id="huimt-msctlr"),
     pytest.param([
-        "--isa=rv64gc_zicsr_xhuimt",
+        "--isa=rv64gc_zicsr_zifencei_zba_zbb_zbs_xhuimt",
         "--priv=msu",
         "--extlib=" + DATA_DIR.joinpath("instructions").as_posix(),
         "-d",
