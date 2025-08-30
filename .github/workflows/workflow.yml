@@ -21,11 +21,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
+        os:
+          - ubuntu-latest
         python:
           - "3.8"
           # - "3.9"
           # - "3.10"
-          - "3.11"
+          # - "3.11"
     steps:
     - uses: actions/checkout@v4
       with:
@@ -34,6 +36,9 @@ jobs:
     - name: Fetch tags
       run: |
         git fetch --tags origin
+    - name: Setup tools
+      run: |
+        sudo apt install -y build-essential device-tree-compiler
     - name: Setup 🐍 ${{ matrix.python }}
       uses: actions/setup-python@v5
       with:
@@ -43,11 +48,13 @@ jobs:
         python -m pip install -e '.[dev]'
         python -m pytest -v
     - name: Package wheels
-      run: |
-        python -m build
-        twine check dist/spike-*
-    # - name: Save artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: spike
-    #     path: dist/spike-*
+      uses: pypa/cibuildwheel@v3.1.4
+      with:
+        package-dir: .
+        output-dir: wheelhouse
+        config-file: "{package}/pyproject.toml"
+    - name: Save artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: spike
+        path: wheelhouse/spike-*
