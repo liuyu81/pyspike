@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import os
 import pathlib
 import site
 import sys
@@ -27,7 +26,8 @@ sys.path.insert(0, str(pypkg))
 
 site.addsitedir(pathlib.Path.cwd())
 
-from riscv._utils import find_spike_executable
+from riscv.__main__ import entry
+
 
 if __name__ == '__main__':
-    os.execve(path=find_spike_executable(), argv=sys.argv, env=os.environ)
+    entry()

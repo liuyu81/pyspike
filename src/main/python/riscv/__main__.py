@@ -16,7 +16,6 @@
 import argparse
 import os
 import pathlib
-import shutil
 import sys
 import sysconfig
 from typing import Mapping, Sequence
@@ -29,12 +28,19 @@ __all__ = ["main", "entry"]
 
 
 def main(args: Sequence[str], env: Mapping[str, str] = os.environ):
-    # parse known and unknown spike cli arguments
+    # find vanilla spike executable
+    spike_exec = find_spike_executable()
+
+    # execute vainilla spike directly
+    if not args[0].endswith("pyspike"):
+        return os.execve(path=spike_exec, argv=[spike_exec, *args[1:]], env=env)
+
+    # parse known and unknown vainilla spike cli arguments
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--extlib", action='append', dest='extlib', nargs=argparse.ZERO_OR_MORE)
-    known_args, unknown_args = parser.parse_known_intermixed_args(args)
+    known_args, unknown_args = parser.parse_known_intermixed_args(args[1:])
 
-    # patch spike cli arguments to load pyspike libraries
+    # patch vainilla spike cli arguments to load pyspike libraries
     dll_ext = sysconfig.get_config_var("SHLIB_SUFFIX")
     clibs = [find_python_library(), find_bridge_library()]
     pylibs = [pathlib.Path(__file__).parent]
@@ -49,8 +55,7 @@ def main(args: Sequence[str], env: Mapping[str, str] = os.environ):
             pylibs.append(fpath)
 
     # execute vainilla spike with patched cli arguments
-    spike_exec = find_spike_executable()
-    os.execve(path=spike_exec, argv=[
+    return os.execve(path=spike_exec, argv=[
         spike_exec,
         *[f"--extlib={ lib }" for lib in clibs],
         *unknown_args,
@@ -60,7 +65,7 @@ def main(args: Sequence[str], env: Mapping[str, str] = os.environ):
 
 
 def entry():
-    main(sys.argv[1:])
+    return main(sys.argv)
 
 
 if __name__ == "__main__":
