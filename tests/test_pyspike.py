@@ -37,7 +37,7 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
     ], 0, id="plic-uart_echo"),
 ])
 def test_pyspike_cli(argv, req_resp, ret_code):
-    proc = pexpect.spawnu("scripts/pyspike", argv)
+    proc = pexpect.spawnu("pyspike", argv)
     for inp, out in req_resp:
         if inp is not None:
             proc.sendline(inp)
@@ -102,7 +102,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
     ], 0, id="huimt-lr_sc")
 ])
 def test_pyspike_cli_debug(argv, req_resp, ret_code):
-    proc = pexpect.spawnu("scripts/pyspike", argv)
+    proc = pexpect.spawnu("pyspike", argv)
     for inp, out in req_resp:
         assert proc.expect_exact("(spike)") == 0
         if inp is not None:
