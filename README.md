@@ -1,8 +1,8 @@
 # Python Bindings of Spike RISC-V ISA Simulator
 
 ```text
-LIU Yu <liuy@etech-inc.com>
-2025/02/14 (v0.0.5)
+LIU Yu <liuy@huimtlab.org>
+2025/10/16 (v0.0.5)
 ```
 
 ## Introduction
@@ -19,7 +19,7 @@ PySpike requires: Python 3.8+.
 Install the wheel package with `pip`.
 
 ```shell
-$ pip install spike
+$ pip install --pre spike
 ```
 
 PySpike ships the original command-line tool `spike`, a.k.a *vanilla Spike*, within its wheel package. You can confirm its availability using,

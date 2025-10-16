@@ -2,13 +2,32 @@
 requires = [
   "auditwheel",
   "build",
+  "packaging>=25",
   "patchelf",
+  "pip>=23",
   "pybind11[global]>3",
-  "setuptools>=61",
-  "setuptools_scm[toml]>=8",
+  "setuptools>=75",
+  "setuptools_scm[toml]>=9",
   "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+build = [
+  "cp38-manylinux_x86_64",
+  "cp39-manylinux_x86_64",
+  "cp310-manylinux_x86_64",
+  "cp311-manylinux_x86_64",
+  "cp312-manylinux_x86_64"
+]
+manylinux-x86_64-image = "quay.io/pypa/manylinux2014_x86_64"
+test-environment = {PYTHONPATH = "tests/data"}
+test-command = "pytest -v -k 'not pyspike_cli'"
+test-extras = ["dev"]
+test-sources = ["tests"]
+
+[tool.cibuildwheel.linux]
+before-all = "yum install -y dtc"
 
 [project]
 name = "spike"
@@ -21,8 +40,7 @@ description = "Python Bindings of Spike RISC-V ISA Simulator"
 readme = {file = "README.md", content-type = "text/markdown"}
 keywords = ["RISC-V", "spike", "ISA", "simulator", "verification"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: Apache Software License",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Framework :: cocotb",
@@ -56,11 +74,11 @@ Homepage = "https://github.com/liuyu81/pyspike"
 dev = [
   "auditwheel",
   "build",
-  "patchelf",
-  "pip",
-  "pybind11[global]>3",
+  "packaging>=25",
   "patchelf",
   "pexpect",
+  "pip>=23",
+  "pybind11[global]>3",
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
@@ -68,8 +86,8 @@ dev = [
   "pytest-pylint",
   "pytest-repeat",
   "pytest-timeout",
-  "setuptools>=61",
-  "setuptools_scm[toml]>=8",
+  "setuptools>=75",
+  "setuptools_scm[toml]>=9",
   "twine",
   "wheel"
 ]
