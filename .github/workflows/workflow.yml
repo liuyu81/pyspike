@@ -15,9 +15,6 @@ jobs:
   build:
     name: Build wheels
     runs-on: ubuntu-latest
-    env:
-      RISCV: /opt/riscv
-      PYBIND11_DETAILED_ERROR_MESSAGES: 1
     steps:
     - uses: actions/checkout@v4
       with:
@@ -28,6 +25,9 @@ jobs:
         git fetch --tags origin
     - name: Build wheels
       uses: pypa/cibuildwheel@v3.1.4
+      env:
+        RISCV: /opt/riscv
+        PYBIND11_DETAILED_ERROR_MESSAGES: 1
       with:
         package-dir: .
         output-dir: wheelhouse

@@ -104,31 +104,23 @@ py_insn_desc_t_create(insn_bits_t match, insn_bits_t mask,
   py::function py2ct =
       py::module_::import("riscv._riscv.processor").attr("insn_func_py2ct");
 
-  auto ct_fast_rv32i =
-      py::cast<uint64_t>(cast(py2ct(fast_rv32i), c_void_p).attr("value"));
-  auto ct_fast_rv64i =
-      py::cast<uint64_t>(cast(py2ct(fast_rv64i), c_void_p).attr("value"));
-  auto ct_fast_rv32e =
-      py::cast<uint64_t>(cast(py2ct(fast_rv32e), c_void_p).attr("value"));
-  auto ct_fast_rv64e =
-      py::cast<uint64_t>(cast(py2ct(fast_rv64e), c_void_p).attr("value"));
-  auto ct_logged_rv32i =
-      py::cast<uint64_t>(cast(py2ct(logged_rv32i), c_void_p).attr("value"));
-  auto ct_logged_rv64i =
-      py::cast<uint64_t>(cast(py2ct(logged_rv64i), c_void_p).attr("value"));
-  auto ct_logged_rv32e =
-      py::cast<uint64_t>(cast(py2ct(logged_rv32e), c_void_p).attr("value"));
-  auto ct_logged_rv64e =
-      py::cast<uint64_t>(cast(py2ct(logged_rv64e), c_void_p).attr("value"));
+  auto ct_fast_rv32i = cast(py2ct(fast_rv32i), c_void_p);
+  auto ct_fast_rv64i = cast(py2ct(fast_rv64i), c_void_p);
+  auto ct_fast_rv32e = cast(py2ct(fast_rv32e), c_void_p);
+  auto ct_fast_rv64e = cast(py2ct(fast_rv64e), c_void_p);
+  auto ct_logged_rv32i = cast(py2ct(logged_rv32i), c_void_p);
+  auto ct_logged_rv64i = cast(py2ct(logged_rv64i), c_void_p);
+  auto ct_logged_rv32e = cast(py2ct(logged_rv32e), c_void_p);
+  auto ct_logged_rv64e = cast(py2ct(logged_rv64e), c_void_p);
 
   return new insn_desc_t{match,
                          mask,
-                         reinterpret_cast<insn_func_t>(ct_fast_rv32i),
-                         reinterpret_cast<insn_func_t>(ct_fast_rv64i),
-                         reinterpret_cast<insn_func_t>(ct_fast_rv32e),
-                         reinterpret_cast<insn_func_t>(ct_fast_rv64e),
-                         reinterpret_cast<insn_func_t>(ct_logged_rv32i),
-                         reinterpret_cast<insn_func_t>(ct_logged_rv64i),
-                         reinterpret_cast<insn_func_t>(ct_logged_rv32e),
-                         reinterpret_cast<insn_func_t>(ct_logged_rv64e)};
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv32i.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv64i.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv32e.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv64e.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv32i.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv64i.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv32e.attr("value"))),
+                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv64e.attr("value")))};
 }
