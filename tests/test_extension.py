@@ -14,8 +14,10 @@
 # limitations under the License.
 #
 from typing import List
+from ctypes.util import find_library
 
 import pytest
+
 # pylint: disable=import-error,no-name-in-module
 from riscv import isa
 from riscv.csrs import csr_t
@@ -61,6 +63,8 @@ class MyDummyROCC(isa.ROCC):
     pytest.param("dummy_rocc", extension_t, 4, 0, id="dummy_rocc"),
 ])
 def test_find_extension(mock_sim, name, cls, n_insn, n_disasm):
+    if not find_library("customext"):
+        pytest.skip("libcustomext.so not found in this build")
     p: processor_t = mock_sim.get_core(0)
     p.reset()
     # lookup
