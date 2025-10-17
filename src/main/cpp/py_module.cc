@@ -786,6 +786,15 @@ PYBIND11_MODULE(_riscv, m) {
              py::arg("fast_rv64e"), py::arg("logged_rv32i"),
              py::arg("logged_rv64i"), py::arg("logged_rv32e"),
              py::arg("logged_rv64e"),
+             // keep_alive<0, N>() parameter mapping:
+             // 4: fast_rv32i
+             // 5: fast_rv64i
+             // 6: fast_rv32e
+             // 7: fast_rv64e
+             // 8: logged_rv32i
+             // 9: logged_rv64i
+             // 10: logged_rv32e
+             // 11: logged_rv64e
              py::keep_alive<0, 4>(), py::keep_alive<0, 5>(), py::keep_alive<0, 6>(),
              py::keep_alive<0, 7>(), py::keep_alive<0, 8>(), py::keep_alive<0, 9>(),
              py::keep_alive<0, 10>(), py::keep_alive<0, 11>())
