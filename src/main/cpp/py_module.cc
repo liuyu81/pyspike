@@ -187,7 +187,7 @@ PYBIND11_MODULE(_riscv, m) {
                py::smart_holder>(mod_devices, "plic_t",
                                  py::multiple_inheritance());
 
-    py::class_<py_mmio_factory_map_t>(mod_devices, "mmio_factory_map_t")
+    py::class_<py_mmio_factory_map_t, py::smart_holder>(mod_devices, "mmio_factory_map_t")
         .def("__len__", &py_mmio_factory_map_t::len)
         .def("__contains__", &py_mmio_factory_map_t::contains)
         .def("__getitem__", &py_mmio_factory_map_t::getitem,
@@ -229,7 +229,7 @@ PYBIND11_MODULE(_riscv, m) {
     // fetch a single instruction from a byte sequence
     mod_decode.def("insn_fetch_all", &insn_fetch_all, py::arg("data"));
 
-    py::class_<insn_t>(mod_decode, "insn_t")
+    py::class_<insn_t, py::smart_holder>(mod_decode, "insn_t")
         .def(py::init<>())
         .def(py::init<insn_bits_t>(), py::arg("bits"))
         .def(py::init([](py::bytes bits) {
@@ -336,28 +336,28 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_disasm = m.def_submodule("disasm");
 
-    py::class_<arg_t, py_arg_t>(mod_disasm, "arg_t")
+    py::class_<arg_t, py_arg_t, py::smart_holder>(mod_disasm, "arg_t")
         .def(py::init())
         .def("to_string", &arg_t::to_string, py::arg("insn"));
 
-    py::class_<disasm_insn_t>(mod_disasm, "disasm_insn_t")
+    py::class_<disasm_insn_t, py::smart_holder>(mod_disasm, "disasm_insn_t")
         .def(py::init(&py_disasm_insn_t_create), py::arg("name"),
-             py::arg("match"), py::arg("mask"))
+             py::arg("match"), py::arg("mask"), py::keep_alive<0, 4>())
         .def_property_readonly("name", &disasm_insn_t::get_name)
         .def_property_readonly("match", &disasm_insn_t::get_match)
         .def_property_readonly("mask", &disasm_insn_t::get_mask)
         .def("to_string", &disasm_insn_t::to_string, py::arg("insn"))
         .def("__eq__", &disasm_insn_t::operator==);
 
-    py::class_<disassembler_t>(mod_disasm, "disassembler_t")
-        .def(py::init<const isa_parser_t *>(), py::arg("isa"))
+    py::class_<disassembler_t, py::smart_holder>(mod_disasm, "disassembler_t")
+        .def(py::init<const isa_parser_t *>(), py::arg("isa"), py::keep_alive<0, 2>())
         .def(
             "add_insn",
             [](disassembler_t &self, py::object py_insn) {
               self.add_insn(
                   PythonBridge::getInstance().track<disasm_insn_t *>(py_insn));
             },
-            py::arg("insn"))
+            py::arg("insn"), py::keep_alive<1, 2>())
         .def("disassemble", &disassembler_t::disassemble)
         .def("lookup", &disassembler_t::lookup, py::return_value_policy::copy);
 
@@ -381,7 +381,7 @@ PYBIND11_MODULE(_riscv, m) {
     mod_extension.attr("ROCC_OPCODE3") = ROCC_OPCODE3;
     mod_extension.attr("ROCC_OPCODE_MASK") = ROCC_OPCODE_MASK;
 
-    py::class_<rocc_insn_t>(mod_extension, "rocc_insn_t")
+    py::class_<rocc_insn_t, py::smart_holder>(mod_extension, "rocc_insn_t")
         .def_property_readonly(
             "opcode",
             [](const rocc_insn_t &self) -> unsigned { return self.opcode; })
@@ -548,7 +548,7 @@ PYBIND11_MODULE(_riscv, m) {
         .value("MMU_ASID", impl_extension_t::IMPL_MMU_ASID)
         .export_values();
 
-    py::class_<isa_parser_t>(mod_isa_parser, "isa_parser_t")
+    py::class_<isa_parser_t, py::smart_holder>(mod_isa_parser, "isa_parser_t")
         .def(py::init<const char *, const char *>(), py::arg("isa"),
              py::arg("priv"))
         .def_property_readonly("max_xlen", &isa_parser_t::get_max_xlen)
@@ -576,7 +576,7 @@ PYBIND11_MODULE(_riscv, m) {
   {
     auto mod_mmu = m.def_submodule("mmu");
 
-    py::class_<mmu_t>(mod_mmu, "mmu_t")
+    py::class_<mmu_t, py::smart_holder>(mod_mmu, "mmu_t")
         // load_reserved
         .def("load_reserved", &mmu_t::load_reserved<int32_t>, py::arg("addr"))
         .def("load_reserved", &mmu_t::load_reserved<int64_t>, py::arg("addr"))
@@ -600,20 +600,20 @@ PYBIND11_MODULE(_riscv, m) {
     auto mod_processor = m.def_submodule("processor");
 
     using xpr_regfile_t = regfile_t<reg_t, NXPR, true>;
-    py::class_<xpr_regfile_t>(mod_processor, "xpr_regfile_t")
+    py::class_<xpr_regfile_t, py::smart_holder>(mod_processor, "xpr_regfile_t")
         .def(py::init())
         .def("write", &xpr_regfile_t::write, py::arg("i"), py::arg("value"))
         .def("__getitem__", &xpr_regfile_t::operator[], py::arg("i"))
         .def("reset", &xpr_regfile_t::reset);
 
     using fpr_regfile_t = regfile_t<freg_t, NFPR, false>;
-    py::class_<fpr_regfile_t>(mod_processor, "fpr_regfile_t")
+    py::class_<fpr_regfile_t, py::smart_holder>(mod_processor, "fpr_regfile_t")
         .def(py::init())
         .def("write", &fpr_regfile_t::write, py::arg("i"), py::arg("value"))
         .def("__getitem__", &fpr_regfile_t::operator[], py::arg("i"))
         .def("reset", &fpr_regfile_t::reset);
 
-    py::class_<py_commit_log_reg_t>(mod_processor, "commit_log_reg_t")
+    py::class_<py_commit_log_reg_t, py::smart_holder>(mod_processor, "commit_log_reg_t")
         .def("__len__", &py_commit_log_reg_t::len)
         .def("__contains__", &py_commit_log_reg_t::contains)
         .def("__getitem__", &py_commit_log_reg_t::getitem,
@@ -625,14 +625,14 @@ PYBIND11_MODULE(_riscv, m) {
         .def("__delitem__", &py_commit_log_reg_t::delitem)
         .def("__repr__", &py_commit_log_reg_t::repr);
 
-    py::class_<py_commit_log_mem_t>(mod_processor, "commit_log_mem_t")
+    py::class_<py_commit_log_mem_t, py::smart_holder>(mod_processor, "commit_log_mem_t")
         .def("__len__", &py_commit_log_mem_t::len)
         .def("__getitem__", &py_commit_log_mem_t::getitem,
              py::return_value_policy::reference)
         .def("append", &py_commit_log_mem_t::append)
         .def("__repr__", &py_commit_log_mem_t::repr);
 
-    py::class_<state_t>(mod_processor, "state_t")
+    py::class_<state_t, py::smart_holder>(mod_processor, "state_t")
         .def(py::init())
         // state_t members
         .def_readwrite("pc", &state_t::pc)
@@ -697,12 +697,12 @@ PYBIND11_MODULE(_riscv, m) {
                                py::return_value_policy::reference_internal)
         // instruction
         .def("register_base_insn", &processor_t::register_base_insn,
-             py::arg("insn"))
+             py::arg("insn"), py::keep_alive<1, 2>())
         .def("register_custom_insn", &processor_t::register_custom_insn,
-             py::arg("insn"))
+             py::arg("insn"), py::keep_alive<1, 2>())
         // extension
         .def("register_extension", &processor_t::register_extension,
-             py::arg("x"))
+             py::arg("x"), py::keep_alive<1, 2>())
         .def("get_extension", py::overload_cast<>(&processor_t::get_extension))
         .def("get_extension",
              py::overload_cast<const char *>(&processor_t::get_extension),
@@ -779,13 +779,25 @@ PYBIND11_MODULE(_riscv, m) {
         },
         py::arg("p"), py::arg("insn"), py::arg("pc"));
 
-    py::class_<insn_desc_t>(mod_processor, "insn_desc_t")
-        .def(py::init(&py_insn_desc_t_create), py::keep_alive<1, 2>(),
+    py::class_<insn_desc_t, py::smart_holder>(mod_processor, "insn_desc_t")
+        .def(py::init(&py_insn_desc_t_create),
              py::arg("match"), py::arg("mask"), py::arg("fast_rv32i"),
              py::arg("fast_rv64i"), py::arg("fast_rv32e"),
              py::arg("fast_rv64e"), py::arg("logged_rv32i"),
              py::arg("logged_rv64i"), py::arg("logged_rv32e"),
-             py::arg("logged_rv64e"))
+             py::arg("logged_rv64e"),
+             // keep_alive<0, N>() parameter mapping:
+             // 4: fast_rv32i
+             // 5: fast_rv64i
+             // 6: fast_rv32e
+             // 7: fast_rv64e
+             // 8: logged_rv32i
+             // 9: logged_rv64i
+             // 10: logged_rv32e
+             // 11: logged_rv64e
+             py::keep_alive<0, 4>(), py::keep_alive<0, 5>(), py::keep_alive<0, 6>(),
+             py::keep_alive<0, 7>(), py::keep_alive<0, 8>(), py::keep_alive<0, 9>(),
+             py::keep_alive<0, 10>(), py::keep_alive<0, 11>())
         // members
         .def_readonly("match", &insn_desc_t::match)
         .def_readonly("mask", &insn_desc_t::mask)
