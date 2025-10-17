@@ -48,6 +48,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
     proc.sendline("q")
     proc.wait()
     assert proc.exitstatus == ret_code
+    proc.close()
 
 
 @pytest.mark.parametrize("argv,req_resp,ret_code", [
@@ -111,3 +112,4 @@ def test_pyspike_cli_debug(argv, req_resp, ret_code):
     proc.sendline("q")
     proc.wait()
     assert proc.exitstatus == ret_code
+    proc.close()

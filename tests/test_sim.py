@@ -73,6 +73,6 @@ def test_sim_run(kwargs, req_resp, ret_code):
     assert proc.expect("(spike)") == 0
     proc.sendline("q")
     _, status = os.waitpid(pid, 0)
-    os.close(fd)
     assert os.WIFEXITED(status)
     assert os.WEXITSTATUS(status) == ret_code
+    proc.close()  # closes fd internally
