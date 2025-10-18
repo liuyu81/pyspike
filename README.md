@@ -51,8 +51,9 @@ An ISA extension in PySpike is a Python class that inherits `riscv.isa.ISA`. It 
 ```python
 from typing import List
 from riscv import isa
+from riscv.csrs import csr_t
 from riscv.disasm import disasm_insn_t
-from riscv.processor import insn_desc_t
+from riscv.processor import insn_desc_t, processor_t
 
 @isa.register("myisa")
 class MyISA(isa.ISA):
