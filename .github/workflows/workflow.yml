@@ -4,9 +4,17 @@ name: Continuous Integration
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - README.md
+      - docs/**
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - README.md
+      - docs/**
+  release:
+    types: [published]
 
 permissions:
   contents: read
