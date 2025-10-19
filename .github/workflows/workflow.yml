@@ -12,7 +12,11 @@ permissions:
 jobs:
   build:
     name: Build wheels
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
     steps:
     - uses: actions/checkout@v5
       with:
@@ -33,21 +37,25 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: spike-wheels
+        name: spike-wheels-${{ matrix.os }}
         path: wheelhouse/spike-*.whl
         overwrite: true
         retention-days: 1
   publish:
     name: Publish wheels
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     if: github.ref == 'refs/heads/main'
     needs: build
     environment: pre-release
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
-        name: spike-wheels
+        name: spike-wheels-${{ matrix.os }}
         path: wheelhouse
     - name: Upload to PyPI
       run: |
