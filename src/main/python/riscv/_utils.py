@@ -35,6 +35,10 @@ def find_python_library() -> pathlib.Path:
         pathlib.Path(lib_dir).joinpath(lib_name).with_suffix(dll_ext),
         pathlib.Path(lib_dir).joinpath(multiarch, lib_name).with_suffix(dll_ext),
     ]
+    if sys.platform == 'darwin':
+        prefix = sysconfig.get_config_var('prefix')
+        framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
+        candidates.append(pathlib.Path(prefix).joinpath(framework))
     for lib in candidates:
         if lib.exists():
             return lib.absolute()
