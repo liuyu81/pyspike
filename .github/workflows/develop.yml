@@ -1,0 +1,54 @@
+---
+name: Continuous Lint and Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - README.md
+      - docs/**
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - README.md
+      - docs/**
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: 🐍 ${{ matrix.python }}
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+        python:
+          - "3.8"
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        submodules: true
+    - name: Fetch tags
+      run: |
+        git fetch --tags origin
+    - name: Install deps
+      run: |
+        sudo apt install -y build-essential device-tree-compiler
+    - name: Setup python
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Build and test
+      env:
+        RISCV: /opt/riscv
+        PYBIND11_DETAILED_ERROR_MESSAGES: 1
+      run: |
+        python -m venv .venv${{ matrix.python }}
+        .venv${{ matrix.python }}/bin/python -m pip install -e '.[dev]'
+        PATH=scripts:$PATH .venv${{ matrix.python }}/bin/python -m pytest -v

@@ -2,17 +2,6 @@
 name: Continuous Integration
 
 on:
-  workflow_dispatch:
-  push:
-    paths-ignore:
-      - README.md
-      - docs/**
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - README.md
-      - docs/**
   release:
     types: [published]
 
@@ -24,7 +13,7 @@ jobs:
     name: Build wheels
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
         submodules: true
