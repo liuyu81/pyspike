@@ -21,10 +21,15 @@ build = [
   "cp312-manylinux_x86_64"
 ]
 manylinux-x86_64-image = "quay.io/pypa/manylinux2014_x86_64"
-test-environment = {PYTHONPATH = "tests/data"}
+test-environment = {PYTHONPATH = "examples"}
 test-command = "pytest -v -k 'not pyspike_cli'"
-test-extras = ["dev"]
-test-sources = ["tests"]
+test-extras = [
+  "dev"
+]
+test-sources = [
+  "examples",
+  "tests"
+]
 
 [tool.cibuildwheel.linux]
 before-all = "yum install -y dtc"
@@ -148,7 +153,7 @@ filterwarnings = [
 ]
 pythonpath = [
   "src/main/python",
-  "tests/data"
+  "examples"
 ]
 testpaths = [
   "tests"

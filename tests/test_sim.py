@@ -49,7 +49,9 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
         "plugin_device_factories": [
             ("amba_uartlite:plic", ("0x20000000", )),
         ],
-        "args": ["tests/data/plic-uart_echo.elf"],
+        "args": [
+            DATA_DIR.joinpath("plic-uart_echo.elf").as_posix()
+        ],
         "dm_config": debug_module_config_t()
     }, [
         (None, "warning: tohost and fromhost symbols not in ELF; can't communicate with target\r\n"),
