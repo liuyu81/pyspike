@@ -55,18 +55,18 @@ PythonBridge::~PythonBridge() {
 template <>
 insn_func_t
 PythonBridge::track<insn_func_t>(py::handle py_obj) {
+  py_obj.inc_ref();
   // cast python callable to ctypes function
   py::function py2ct =
       py::module_::import("riscv._riscv.processor").attr("insn_func_py2ct");
   auto py_ct = py2ct(py_obj);
-  references.emplace(reinterpret_cast<uint64_t>(py_ct.ptr()), py_ct);
   py_ct.inc_ref();
+  references.emplace(reinterpret_cast<uint64_t>(py_ct.ptr()), py_ct);
   // cast ctypes function to void pointer then to insn_func_t
   py::function cast = py::module_::import("ctypes").attr("cast");
   py::function c_void_p = py::module_::import("ctypes").attr("c_void_p");
   auto obj = py::cast<uint64_t>(cast(py_ct, c_void_p).attr("value"));
   references.emplace(obj, py_obj);
-  py_obj.inc_ref();
   return reinterpret_cast<insn_func_t>(obj);
 }
 

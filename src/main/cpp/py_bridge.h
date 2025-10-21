@@ -70,9 +70,9 @@ public:
                              typename std::remove_pointer<T>::type>::value),
         "T must be abstract_device_t, device_factory_t, processor_t, arg_t, "
         "csr_t, rocc_t, extension_t, disasm_insn_t, or insn_desc_t");
+    py_obj.inc_ref();
     T obj = pybind11::cast<T>(py_obj);
     references.emplace(reinterpret_cast<uint64_t>(obj), py_obj);
-    py_obj.inc_ref();
     return obj;
   };
 
