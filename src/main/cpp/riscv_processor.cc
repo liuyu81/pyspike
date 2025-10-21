@@ -15,7 +15,6 @@
  */
 #include <iostream>
 
-#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -99,28 +98,17 @@ py_insn_desc_t_create(insn_bits_t match, insn_bits_t mask,
                       py::function fast_rv32e, py::function fast_rv64e,
                       py::function logged_rv32i, py::function logged_rv64i,
                       py::function logged_rv32e, py::function logged_rv64e) {
-  py::function cast = py::module_::import("ctypes").attr("cast");
-  py::function c_void_p = py::module_::import("ctypes").attr("c_void_p");
-  py::function py2ct =
-      py::module_::import("riscv._riscv.processor").attr("insn_func_py2ct");
-
-  auto ct_fast_rv32i = cast(py2ct(fast_rv32i), c_void_p);
-  auto ct_fast_rv64i = cast(py2ct(fast_rv64i), c_void_p);
-  auto ct_fast_rv32e = cast(py2ct(fast_rv32e), c_void_p);
-  auto ct_fast_rv64e = cast(py2ct(fast_rv64e), c_void_p);
-  auto ct_logged_rv32i = cast(py2ct(logged_rv32i), c_void_p);
-  auto ct_logged_rv64i = cast(py2ct(logged_rv64i), c_void_p);
-  auto ct_logged_rv32e = cast(py2ct(logged_rv32e), c_void_p);
-  auto ct_logged_rv64e = cast(py2ct(logged_rv64e), c_void_p);
-
-  return new insn_desc_t{match,
-                         mask,
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv32i.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv64i.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv32e.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_fast_rv64e.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv32i.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv64i.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv32e.attr("value"))),
-                         reinterpret_cast<insn_func_t>(py::cast<uint64_t>(ct_logged_rv64e.attr("value")))};
+  auto &bridge = PythonBridge::getInstance();
+  return new insn_desc_t{
+    match,
+    mask,
+    bridge.track<insn_func_t>(fast_rv32i),
+    bridge.track<insn_func_t>(fast_rv64i),
+    bridge.track<insn_func_t>(fast_rv32e),
+    bridge.track<insn_func_t>(fast_rv64e),
+    bridge.track<insn_func_t>(logged_rv32i),
+    bridge.track<insn_func_t>(logged_rv64i),
+    bridge.track<insn_func_t>(logged_rv32e),
+    bridge.track<insn_func_t>(logged_rv64e)
+  };
 }

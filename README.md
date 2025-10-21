@@ -46,13 +46,14 @@ Hello, World!
 
 ### Quick ISA Extension
 
-An ISA extension in PySpike is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, and the latter provides their disassemblers. Other optional methods include `get_csrs` and `reset`, for providing custom *control state registers* （CSRs) and resetting extension states, respectively. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
+An ISA extension implements one or more custom instructions and / or control-state registers (CSRs) for Spike's RISC-V processor models. With PySpike, an ISA extension is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, and the latter provides their disassemblers. Other optional methods include `get_csrs` and `reset`, for providing custom CSRs and resetting extension states, respectively. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
 
 ```python
 from typing import List
 from riscv import isa
+from riscv.csrs import csr_t
 from riscv.disasm import disasm_insn_t
-from riscv.processor import insn_desc_t
+from riscv.processor import insn_desc_t, processor_t
 
 @isa.register("myisa")
 class MyISA(isa.ISA):
@@ -65,7 +66,7 @@ class MyISA(isa.ISA):
 
 ### Quick Device Model
 
-Likewise to the ISA extension, an MMIO model in PySpike is a class that inherits `riscv.dev.MMIO`. It should implement a minimum of three methods: `__init__`, `load`, and `store`. The former initializes the model, the latter two handle memory read and write operations. Other optional methods include `size` and `tick`, for obtaining the size of memory-mapped address space, and shifting device states, respectively. Use decorator `@dev.register("mydev")` to register the model under the name `mydev`.
+Likewise to the ISA extension, a device model implements a custom *memory-mapped input/output* (MMIO) peripheral for Spike's simulated system bus. With PySpike, a device model is a Python class that inherits `riscv.dev.MMIO`. It should implement a minimum of three methods: `__init__`, `load`, and `store`. The former initializes the model, the latter two handle memory read and write operations. Other optional methods include `size` and `tick`, for obtaining the size of memory-mapped address space, and shifting device states, respectively. Use decorator `@dev.register("mydev")` to register the model under the name `mydev`.
 
 ```python
 from typing import Optional

@@ -8,6 +8,7 @@ recursive-include docs *.puml *.md
 recursive-include src/main/cpp *.h *.cc
 recursive-include src/main/python *.py *.pyi py.typed
 recursive-include tests *.py *.pyi
+recursive-include examples *
 recursive-include tests/data *.py *.elf
 recursive-include vendor *
 recursive-exclude src/main/python/riscv/data *
