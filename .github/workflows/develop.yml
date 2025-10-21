@@ -28,7 +28,7 @@ jobs:
         python:
           - "3.8"
           - "3.9"
-          # - "3.10"
+          - "3.10"
           - "3.11"
           - "3.12"
     steps:
@@ -46,11 +46,13 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python }}
-    - name: Build and test
+    - name: Build editable
       env:
         RISCV: /opt/riscv
         PYBIND11_DETAILED_ERROR_MESSAGES: 1
       run: |
         python -m venv .venv${{ matrix.python }}
         .venv${{ matrix.python }}/bin/python -m pip install -e '.[dev]'
+    - name: Lint and test
+      run: |
         PATH=scripts:$PATH .venv${{ matrix.python }}/bin/python -m pytest -v
