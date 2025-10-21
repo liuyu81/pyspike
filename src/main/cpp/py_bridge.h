@@ -27,6 +27,7 @@
 #include <riscv/rocc.h>
 
 #include <pybind11/embed.h>
+#include <pybind11/functional.h>
 #include <pybind11/stl.h>
 
 class PythonBridge {
@@ -63,13 +64,29 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<extension_t,
                              typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<disasm_insn_t,
+                             typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<insn_desc_t,
                              typename std::remove_pointer<T>::type>::value ||
-             std::is_base_of<disasm_insn_t,
-                             typename std::remove_pointer<T>::type>::value),
+             std::is_same<T, insn_func_t>::value),
         "T must be abstract_device_t, device_factory_t, processor_t, arg_t, "
-        "csr_t, rocc_t, extension_t, insn_desc_t, or disasm_insn_t");
+        "csr_t, rocc_t, extension_t, insn_desc_t, insn_func_t, or disasm_insn_t");
     py_obj.inc_ref();
+    if constexpr (std::is_same<T, insn_func_t>::value) {
+      pybind11::function cast = pybind11::module_::import("ctypes").attr("cast");
+      pybind11::function c_void_p = pybind11::module_::import("ctypes").attr("c_void_p");
+      pybind11::function py2ct =
+          pybind11::module_::import("riscv._riscv.processor").attr("insn_func_py2ct");
+      // cast python callable to ctypes function pointer
+      auto py_ct = py2ct(py_obj);
+      py_ct.inc_ref();
+      references.emplace(reinterpret_cast<uint64_t>(py_ct.ptr()), py_ct);
+      // cast ctypes function pointer to void* then to T
+      auto py_ct_void_p = cast(py_ct, c_void_p);
+      auto obj = pybind11::cast<uint64_t>(py_ct_void_p.attr("value"));
+      references.emplace(obj, py_obj);
+      return reinterpret_cast<T>(obj);
+    }
     T obj = pybind11::cast<T>(py_obj);
     references.emplace(reinterpret_cast<uint64_t>(obj), py_obj);
     return obj;

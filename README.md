@@ -46,7 +46,7 @@ Hello, World!
 
 ### Quick ISA Extension
 
-An ISA extension implements one or more custom instructions and / or control-state registers (CSR's) for Spike's RISC-V processor models. With PySpike, an ISA extension is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, and the latter provides their disassemblers. Other optional methods include `get_csrs` and `reset`, for providing custom CSR's and resetting extension states, respectively. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
+An ISA extension implements one or more custom instructions and / or control-state registers (CSRs) for Spike's RISC-V processor models. With PySpike, an ISA extension is a Python class that inherits `riscv.isa.ISA`. It should implement a minimum of two methods: `get_instructions` and `get_disasms`. The former provides functional models of one or more custom instructions, and the latter provides their disassemblers. Other optional methods include `get_csrs` and `reset`, for providing custom CSRs and resetting extension states, respectively. Use decorator `@isa.register("myisa")` to register the extension under the name `myisa`.
 
 ```python
 from typing import List
