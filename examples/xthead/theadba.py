@@ -36,7 +36,7 @@ class TheadBa(extension_t):
     # pylint: disable=unused-argument
     def get_instructions(self, proc: processor_t) -> List[insn_desc_t]:
         return [
-            insn_desc_t(0x100b, 0xf800707f, (self._do_th_addsl, ) * 2, *(illegal_instruction, ) * 6),
+            insn_desc_t(0x100b, 0xf800707f, *(self._do_th_addsl, ) * 2, *(illegal_instruction, ) * 6),
         ]
 
     # pylint: disable=unused-argument
