@@ -45,6 +45,9 @@ public:
   // returns singleton instance of python bridge
   static PythonBridge &getInstance();
 
+  // post-initialization bootstrap
+  static void bootstrap();
+
 public:
   // keep the python object alive on the C++ side
   template <typename T> T track(pybind11::handle py_obj) {

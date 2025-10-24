@@ -957,6 +957,9 @@ PYBIND11_MODULE(_riscv, m) {
     mod_term.def("read", &py_canonical_terminal_t::read);
     mod_term.def("write", &py_canonical_terminal_t::write);
   }
+
+  // bootstrap PYSPIKE_LIBS modules
+  m.def("bootstrap", &PythonBridge::bootstrap);
 }
 
 PythonBridge PythonBridge::singleton;

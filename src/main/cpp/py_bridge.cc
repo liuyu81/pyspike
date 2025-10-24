@@ -24,12 +24,21 @@ PythonBridge::PythonBridge() : standalone(!Py_IsInitialized()), references() {
   if (standalone) {
     py::initialize_interpreter();
   }
-  // load Python (IP) libraries
+  // bootstrap python-in-spike
+  bootstrap();
+}
+
+PythonBridge &PythonBridge::getInstance() {
+  return PythonBridge::singleton;
+}
+
+void PythonBridge::bootstrap() {
   py::exec(R"(
     import importlib
     import os
     import pathlib
     import sys
+    import warnings
     if (pylibs := os.environ.get(")" ENV_PYSPIKE_LIBS R"(")):
         for mod_path in map(pathlib.Path, pylibs.split(os.pathsep)):
             sys.path.insert(0, mod_path.parent.as_posix())
@@ -37,12 +46,11 @@ PythonBridge::PythonBridge() : standalone(!Py_IsInitialized()), references() {
                 mod_name = mod_path.with_suffix("").name
             else:
                 mod_name = mod_path.name
-            importlib.import_module(mod_name)
+            try:
+                importlib.import_module(mod_name)
+            except ImportError:
+                warnings.warn(f"failed to load '{mod_path}'.", ImportWarning)
   )");
-}
-
-PythonBridge &PythonBridge::getInstance() {
-  return PythonBridge::singleton;
 }
 
 PythonBridge::~PythonBridge() {
@@ -53,8 +61,7 @@ PythonBridge::~PythonBridge() {
 }
 
 template <>
-insn_func_t
-PythonBridge::track<insn_func_t>(py::handle py_obj) {
+insn_func_t PythonBridge::track<insn_func_t>(py::handle py_obj) {
   py_obj.inc_ref();
   // cast python callable to ctypes function
   py::function py2ct =
