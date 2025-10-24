@@ -36,28 +36,6 @@ class addi_t:
         return pc + len(i)
 
 
-# pylint: disable=invalid-name
-class th_addsl_t:
-    """
-    XTheadBa (th.addsl) Instruction
-
-    th.addsl rd, rs1, rs2, imm2
-
-    C.f. https://github.com/XUANTIE-RV/thead-extension-spec/blob/master/xtheadba.adoc
-    """
-
-    def __call__(self, p: processor_t, i: insn_t, pc: int) -> int:
-        """
-        reg[rd] := reg[rs1] + (reg[rs2] << imm2)
-        """
-        bits = int.from_bytes(i.bits, 'little')
-        imm2 = (bits >> 25) & 0b11
-        wdata = p.state.XPR[i.rs1] + (p.state.XPR[i.rs2] << imm2)
-        p.state.XPR.write(i.rd, wdata)
-        p.state.log_reg_write[i.rd << 4] = (wdata, 0)
-        return pc + len(i)
-
-
 def test_register_base_insn(mock_sim):
     p: processor_t = mock_sim.get_core(0)
     p.reset()
@@ -80,20 +58,20 @@ def test_register_base_insn(mock_sim):
     assert p.state.XPR[i.rd] == 60
 
 
-def test_register_custom_insn(mock_sim):
+# pylint: disable=unused-argument,import-outside-toplevel
+def test_register_custom_insn(import_from_data_dir, mock_sim):
+    from xthead import THeadISA
     p: processor_t = mock_sim.get_core(0)
     p.reset()
 
-    do_th_addsl = th_addsl_t()
-    d = insn_desc_t(0x100b, 0xf800707f, do_th_addsl, *(illegal_instruction, ) * 7)
-    assert d.match == 0x100b
-    assert d.mask == 0xf800707f
-    p.register_custom_insn(d)
+    thead_isa = THeadISA()
+    for d in thead_isa.get_instructions(p):
+        p.register_custom_insn(d)
 
-    i = insn_t(0x0473128b)
+    i = insn_t(0x0473128b)  # th.addsl t0, t1, t2, 2
     assert i.rd == 5    # rd <- t0 (x5)
     assert i.rs1 == 6   # rs1 <- t1 (x6)
-    assert i.rs2 == 7   # rs2 <- tt (x7)
+    assert i.rs2 == 7   # rs2 <- t2 (x7)
     imm2 = (int.from_bytes(i.bits, 'little') >> 25) & 0b11
     assert imm2 == 2
 

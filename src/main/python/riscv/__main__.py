@@ -16,7 +16,6 @@
 import argparse
 import os
 import pathlib
-import shutil
 import sys
 import sysconfig
 from typing import Mapping, Sequence

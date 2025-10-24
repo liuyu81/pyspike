@@ -16,9 +16,10 @@
 from ctypes import c_ulong
 from typing import List, Optional
 # pylint: disable=import-error,no-name-in-module
-from riscv.extension import extension_t
+from riscv.csrs import csr_t
 from riscv.decode import insn_t
 from riscv.disasm import disasm_insn_t
+from riscv.extension import extension_t
 from riscv.processor import insn_desc_t, processor_t
 
 from . import operands as op
@@ -48,6 +49,10 @@ class MyLRSC(extension_t):
             disasm_insn_t("sc.w", 0x1800202f, 0xf800707f, op.rd, op.rs2, op.base_only_address),
             disasm_insn_t("sc.d", 0x1800302f, 0xf800707f, op.rd, op.rs2, op.base_only_address),
         ]
+
+    # pylint: disable=unused-argument
+    def get_csrs(self, proc: processor_t) -> List[csr_t]:
+        return []
 
     # pylint: disable=unused-argument
     def reset(self, proc: processor_t) -> None:

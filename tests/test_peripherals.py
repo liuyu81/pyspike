@@ -24,8 +24,8 @@ from riscv.test import _test_mmio_load, _test_mmio_store, _test_mmio_tick
     "hello world!\n"
 ])
 def test_amba_uart_lite(import_from_data_dir, mock_sim, message):
-    from peripherals import UARTLitePLIC
-    from peripherals.uart_lite import Reg
+    from amba import UARTLitePLIC
+    from amba.uart_lite import Reg
     # ctor
     uart = UARTLitePLIC(mock_sim, message)
     assert uart is not None

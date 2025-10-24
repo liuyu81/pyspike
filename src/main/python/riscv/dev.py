@@ -36,7 +36,7 @@ class MMIO(abstract_device_t):
         pass
 
 
-def register(name: str, replace: bool = False):
+def register(name: str, *, size: Optional[int] = None, replace: bool = False):
     """
     Decorator for registering MMIO device
     """
@@ -46,17 +46,27 @@ def register(name: str, replace: bool = False):
 
     def mmio_decorator(mmio_cls: Type[MMIO]):
 
+        class MMIODevice(mmio_cls):
+
+            def size(self) -> int:
+                if size is not None:
+                    return size
+                return super().size()
+
+        MMIODevice.__name__ = mmio_cls.__name__
+        MMIODevice.__doc__ = mmio_cls.__doc__
+
         class MMIOFactory(device_factory_t):
 
             # pylint: disable=unused-argument
             def parse_from_fdt(self, fdt, sim: sim_t, *sargs: str) -> Tuple[Optional[abstract_device_t], int]:
-                return mmio_cls(sim, ",".join(sargs[1:])), int(sargs[0], 16)
+                return MMIODevice(sim, ",".join(sargs[1:])), int(sargs[0], 16)
 
             # pylint: disable=unused-argument
             def generate_dts(self, sim: sim_t, *sargs: str) -> str:
                 return ""
 
         mmio_device_map[name] = MMIOFactory()
-        return mmio_cls
+        return MMIODevice
 
     return mmio_decorator
