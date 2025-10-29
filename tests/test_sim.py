@@ -26,11 +26,6 @@ from riscv.cfg import cfg_t, mem_cfg_t
 from riscv.debug_module import debug_module_config_t
 from riscv.sim import sim_t
 
-# pylint: disable=unused-import
-import instructions
-import peripherals
-
-
 DATA_DIR = pathlib.Path(__file__).parent / "data"
 
 

@@ -43,7 +43,6 @@ class rvc_imm_t(arg_t):
         return str(insn.rvc_imm)
 
 
-
 class rd_t(arg_t):
 
     def to_string(self, insn: insn_t) -> str:
