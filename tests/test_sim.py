@@ -26,11 +26,6 @@ from riscv.cfg import cfg_t, mem_cfg_t
 from riscv.debug_module import debug_module_config_t
 from riscv.sim import sim_t
 
-# pylint: disable=unused-import
-import instructions
-import peripherals
-
-
 DATA_DIR = pathlib.Path(__file__).parent / "data"
 
 
@@ -38,7 +33,7 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
 @pytest.mark.parametrize("kwargs,req_resp,ret_code", [
     pytest.param({
         "cfg": cfg_t(
-            isa="rv32imc_zicsr_zifencei",
+            isa="rv32imc_zicsr_zifencei_zba_zbb_zbs",
             priv="m",
             mem_layout=[
                 mem_cfg_t(0x9000_0000, 0x4_0000)
@@ -49,7 +44,9 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
         "plugin_device_factories": [
             ("amba_uartlite:plic", ("0x20000000", )),
         ],
-        "args": ["tests/data/plic-uart_echo.elf"],
+        "args": [
+            DATA_DIR.joinpath("plic-uart_echo.elf").as_posix()
+        ],
         "dm_config": debug_module_config_t()
     }, [
         (None, "warning: tohost and fromhost symbols not in ELF; can't communicate with target\r\n"),
@@ -75,3 +72,4 @@ def test_sim_run(kwargs, req_resp, ret_code):
     _, status = os.waitpid(pid, 0)
     assert os.WIFEXITED(status)
     assert os.WEXITSTATUS(status) == ret_code
+    proc.close()  # closes fd internally

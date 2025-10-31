@@ -30,7 +30,7 @@ def import_from_data_dir():
     return path
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_sim():
     yield sim_t(
         cfg=cfg_t(

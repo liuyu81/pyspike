@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 import abc
-
+from typing import Type
 from riscv.extension import extension_t, rocc_t, register_extension
 
 
@@ -50,7 +50,7 @@ def register(ext_name: str):
     # if find_extension(name) is not None:
     #     raise KeyError(f"Extension '{name}' already registered")
 
-    def isa_decorator(ext_cls):
+    def isa_decorator(ext_cls: Type[extension_t]):
 
         class MyISA(ext_cls):
 

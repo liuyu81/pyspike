@@ -22,7 +22,7 @@
 
 #include <pybind11/pybind11.h>
 
-class py_arg_t : public arg_t {
+class py_arg_t : public arg_t, public pybind11::trampoline_self_life_support {
 public:
   virtual std::string to_string(insn_t val) const override;
 };

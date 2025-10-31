@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include <map>
+#include <optional>
 #include <vector>
 
 #include <pybind11/functional.h>
@@ -48,5 +49,5 @@ py_sim_t *py_sim_t::create(
   }
   // allocate py_sim_t instance
   return new py_sim_t(&cfg, halted, mems, factories, args, dm_config, nullptr,
-                      true, nullptr, false, nullptr);
+                      true, nullptr, false, nullptr, std::nullopt);
 }

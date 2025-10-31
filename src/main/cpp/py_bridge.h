@@ -27,6 +27,7 @@
 #include <riscv/rocc.h>
 
 #include <pybind11/embed.h>
+#include <pybind11/functional.h>
 #include <pybind11/stl.h>
 
 class PythonBridge {
@@ -44,6 +45,9 @@ public:
   // returns singleton instance of python bridge
   static PythonBridge &getInstance();
 
+  // post-initialization bootstrap
+  static void bootstrap();
+
 public:
   // keep the python object alive on the C++ side
   template <typename T> T track(pybind11::handle py_obj) {
@@ -53,6 +57,8 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<const device_factory_t,
                              typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<processor_t,
+                             typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<arg_t,
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<csr_t,
@@ -61,17 +67,15 @@ public:
                              typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<extension_t,
                              typename std::remove_pointer<T>::type>::value ||
-             std::is_base_of<insn_desc_t,
-                             typename std::remove_pointer<T>::type>::value ||
              std::is_base_of<disasm_insn_t,
+                             typename std::remove_pointer<T>::type>::value ||
+             std::is_base_of<insn_desc_t,
                              typename std::remove_pointer<T>::type>::value),
-        "T must be abstract_device_t, device_factory_t, arg_t, csr_t, rocc_t, "
-        "extension_t, insn_desc_t, or disasm_insn_t");
+        "T must be abstract_device_t, device_factory_t, processor_t, arg_t, "
+        "csr_t, rocc_t, extension_t, disasm_insn_t, or insn_desc_t");
+    py_obj.inc_ref();
     T obj = pybind11::cast<T>(py_obj);
-    uint64_t addr = reinterpret_cast<uint64_t>(obj);
-    if (references.emplace(addr, py_obj).second) {
-      py_obj.inc_ref();
-    }
+    references.emplace(reinterpret_cast<uint64_t>(obj), py_obj);
     return obj;
   };
 
@@ -85,6 +89,9 @@ private:
 private:
   static PythonBridge singleton;
 };
+
+// specialization for PythonBridge::track<>() of pythonic insn_func_t
+template <> insn_func_t PythonBridge::track<insn_func_t>(pybind11::handle py_obj);
 
 std::string format_ptr(const void *ptr, size_t width = 16);
 

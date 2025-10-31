@@ -25,7 +25,8 @@
 #include "py_bridge.h"
 
 // trampoline helper class for extending abstract_device_t
-class py_abstract_device_t : public abstract_device_t {
+class py_abstract_device_t : public abstract_device_t,
+                             public pybind11::trampoline_self_life_support {
 public:
   using abstract_device_t::abstract_device_t;
 
@@ -34,12 +35,15 @@ public:
   virtual bool load(reg_t addr, size_t len, uint8_t *bytes) override;
   // py signature: `(addr: int, data: bytes) -> None`
   virtual bool store(reg_t addr, size_t len, const uint8_t *bytes) override;
+  // py signature: `() -> int`
+  virtual reg_t size() override;
   // py signature: `(rtc_ticks: int) -> None`
   virtual void tick(reg_t rtc_ticks) override;
 };
 
 // trampoline helper class for extending device_factory_t
-class py_device_factory_t : public device_factory_t {
+class py_device_factory_t : public device_factory_t,
+                            public pybind11::trampoline_self_life_support {
 public:
   using device_factory_t::device_factory_t;
   py_device_factory_t();
@@ -75,6 +79,9 @@ pybind11::bytes py_mmio_load(abstract_device_t &dev, reg_t addr, size_t len);
 
 // helper for Python -> C++ -> Python calls to `abstract_device_t::store`
 void py_mmio_store(abstract_device_t &dev, reg_t addr, pybind11::bytes data);
+
+// helper for Python -> C++ -> Python calls to `abstract_device_t::size`
+reg_t py_mmio_size(abstract_device_t &dev);
 
 // helper for Python -> C++ -> Python calls to `abstract_device_t::tick`
 void py_mmio_tick(abstract_device_t &dev, reg_t rtc_ticks);

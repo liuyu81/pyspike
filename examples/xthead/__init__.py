@@ -1,5 +1,5 @@
 #
-# Copyright 2024 WuXi EsionTech Co., Ltd.
+# Copyright 2025 WuXi EsionTech Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,38 +13,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import List, Set
+from typing import List
 # pylint: disable=import-error,no-name-in-module
 from riscv import isa
+from riscv.csrs import csr_t
 from riscv.disasm import disasm_insn_t
-from riscv.processor import insn_desc_t
-from .mycsrs import MSCTLR
-from .myisas import MyLRSC
+from riscv.processor import insn_desc_t, processor_t
+from .theadba import TheadBa
 
 
 # pylint: disable=abstract-method
-@isa.register("huimt")
-class HuiMtISA(isa.ISA):
+@isa.register("thead")
+class THeadISA(isa.ISA):
     """
-    HuiMt-E Extensions to RISC-V ISA
+    Functional Mockup of T-Head Extensions to RISC-V ISA
     """
 
     def __init__(self):
         super().__init__()
-        self.lrsc = MyLRSC()
+        self.theadba = TheadBa()
 
-    def get_instructions(self) -> List[insn_desc_t]:
+    def get_instructions(self, proc: processor_t) -> List[insn_desc_t]:
         return [
-            *self.lrsc.get_instructions()
+            *self.theadba.get_instructions(proc),
         ]
 
-    def get_disasms(self) -> List[disasm_insn_t]:
+    def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return [
-            *self.lrsc.get_disasms()
+            *self.theadba.get_disasms(proc),
         ]
 
-    def reset(self) -> None:
-        super().reset()
-        self.lrsc.reset()
-        msctlr = MSCTLR(self.p)
-        self.p.state.add_csr(msctlr.address, msctlr)
+    def get_csrs(self, proc: processor_t) -> List[csr_t]:
+        return [
+            *self.theadba.get_csrs(proc),
+        ]
+
+    def reset(self, proc: processor_t) -> None:
+        super().reset(proc)
+        self.theadba.reset(proc)

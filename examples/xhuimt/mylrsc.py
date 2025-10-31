@@ -16,9 +16,10 @@
 from ctypes import c_ulong
 from typing import List, Optional
 # pylint: disable=import-error,no-name-in-module
-from riscv.extension import extension_t
+from riscv.csrs import csr_t
 from riscv.decode import insn_t
 from riscv.disasm import disasm_insn_t
+from riscv.extension import extension_t
 from riscv.processor import insn_desc_t, processor_t
 
 from . import operands as op
@@ -31,7 +32,8 @@ class MyLRSC(extension_t):
         self._reserved_address_32: Optional[int] = None
         self._reserved_address_64: Optional[int] = None
 
-    def get_instructions(self) -> List[insn_desc_t]:
+    # pylint: disable=unused-argument
+    def get_instructions(self, proc: processor_t) -> List[insn_desc_t]:
         return [
             insn_desc_t(0x1000202f, 0xf9f0707f, *(self._do_lr_32, ) * 8),
             insn_desc_t(0x1800202f, 0xf800707f, *(self._do_sc_32, ) * 8),
@@ -39,7 +41,8 @@ class MyLRSC(extension_t):
             insn_desc_t(0x1800302f, 0xf800707f, *(self._do_sc_64, ) * 8),
         ]
 
-    def get_disasms(self) -> List[disasm_insn_t]:
+    # pylint: disable=unused-argument
+    def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return [
             disasm_insn_t("lr.w", 0x1000202f, 0xf9f0707f, op.rd, op.base_only_address),
             disasm_insn_t("lr.d", 0x1000302f, 0xf9f0707f, op.rd, op.base_only_address),
@@ -47,7 +50,12 @@ class MyLRSC(extension_t):
             disasm_insn_t("sc.d", 0x1800302f, 0xf800707f, op.rd, op.rs2, op.base_only_address),
         ]
 
-    def reset(self) -> None:
+    # pylint: disable=unused-argument
+    def get_csrs(self, proc: processor_t) -> List[csr_t]:
+        return []
+
+    # pylint: disable=unused-argument
+    def reset(self, proc: processor_t) -> None:
         self._reserved_address_32 = None
         self._reserved_address_64 = None
 

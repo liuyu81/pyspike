@@ -17,17 +17,17 @@ import pathlib
 import pexpect
 import pytest
 
-
 DATA_DIR = pathlib.Path(__file__).parent / "data"
+EXAM_DIR = pathlib.Path(__file__).parent.parent / "examples"
 
 
 @pytest.mark.parametrize("argv,req_resp,ret_code", [
     pytest.param([
-        "--isa=rv32imc_zicsr_zifencei",
+        "--isa=rv32imc_zicsr_zifencei_zba_zbb_zbs",
         "--priv=m",
         "-m0x90000000:0x40000000",
         "--pc=0x90000000",
-        "--extlib=" + DATA_DIR.joinpath("peripherals").as_posix(),
+        "--extlib=" + EXAM_DIR.joinpath("amba").as_posix(),
         "--device=amba_uartlite:plic,0x20000000",
         DATA_DIR.joinpath("plic-uart_echo.elf").as_posix(),
     ], [
@@ -37,7 +37,7 @@ DATA_DIR = pathlib.Path(__file__).parent / "data"
     ], 0, id="plic-uart_echo"),
 ])
 def test_pyspike_cli(argv, req_resp, ret_code):
-    proc = pexpect.spawnu("scripts/pyspike", argv)
+    proc = pexpect.spawnu("pyspike", argv)
     for inp, out in req_resp:
         if inp is not None:
             proc.sendline(inp)
@@ -48,13 +48,14 @@ def test_pyspike_cli(argv, req_resp, ret_code):
     proc.sendline("q")
     proc.wait()
     assert proc.exitstatus == ret_code
+    proc.close()
 
 
 @pytest.mark.parametrize("argv,req_resp,ret_code", [
     pytest.param([
-        "--isa=rv64gc_zicsr_xhuimt",
+        "--isa=rv64gc_zicsr_zifencei_zba_zbb_zbs_xhuimt",
         "--priv=msu",
-        "--extlib=" + DATA_DIR.joinpath("instructions").as_posix(),
+        "--extlib=" + EXAM_DIR.joinpath("xhuimt").as_posix(),
         "-d",
         DATA_DIR.joinpath("huimt_msctlr.elf").as_posix()
     ], [
@@ -77,9 +78,9 @@ def test_pyspike_cli(argv, req_resp, ret_code):
              "read MSCTLR\r\n"),
     ], 0, id="huimt-msctlr"),
     pytest.param([
-        "--isa=rv64gc_zicsr_xhuimt",
+        "--isa=rv64gc_zicsr_zifencei_zba_zbb_zbs_xhuimt",
         "--priv=msu",
-        "--extlib=" + DATA_DIR.joinpath("instructions").as_posix(),
+        "--extlib=" + EXAM_DIR.joinpath("xhuimt").as_posix(),
         "-d",
         DATA_DIR.joinpath("huimt_lr_sc.elf").as_posix()
     ], [
@@ -102,7 +103,7 @@ def test_pyspike_cli(argv, req_resp, ret_code):
     ], 0, id="huimt-lr_sc")
 ])
 def test_pyspike_cli_debug(argv, req_resp, ret_code):
-    proc = pexpect.spawnu("scripts/pyspike", argv)
+    proc = pexpect.spawnu("pyspike", argv)
     for inp, out in req_resp:
         assert proc.expect_exact("(spike)") == 0
         if inp is not None:
@@ -111,3 +112,4 @@ def test_pyspike_cli_debug(argv, req_resp, ret_code):
     proc.sendline("q")
     proc.wait()
     assert proc.exitstatus == ret_code
+    proc.close()

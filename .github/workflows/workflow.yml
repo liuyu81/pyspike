@@ -3,62 +3,54 @@ name: Continuous Integration
 
 on:
   workflow_dispatch:
-  push:
-  pull_request:
-    branches:
-      - main
+  release:
+    types: [published]
 
 permissions:
   contents: read
 
-env:
-  RISCV: /opt/riscv
-  PYBIND11_DETAILED_ERROR_MESSAGES: 1
-
 jobs:
   build:
-    name: 🐍 ${{ matrix.python }} • ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os:
-          - ubuntu-20.04
-        python:
-          - "3.8"
-          # - "3.9"
-          # - "3.10"
-          - "3.11"
+    name: Build wheels
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
         submodules: true
     - name: Fetch tags
       run: |
         git fetch --tags origin
-    - name: Setup spike
-      run: |
-        sudo apt install -y build-essential device-tree-compiler libboost-all-dev
-        cd vendor/spike
-        ./configure --prefix=$RISCV --with-boost-asio
-        make -j$(nproc)
-        make check
-        sudo make install
-    - name: Setup 🐍 ${{ matrix.python }}
-      uses: actions/setup-python@v5
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v3.1.4
+      env:
+        RISCV: /opt/riscv
+        PYBIND11_DETAILED_ERROR_MESSAGES: 1
       with:
-        python-version: ${{ matrix.python }}
-    - name: Run lint and test
+        package-dir: .
+        output-dir: wheelhouse
+        config-file: "{package}/pyproject.toml"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: spike-wheels
+        path: wheelhouse/spike-*.whl
+        overwrite: true
+        retention-days: 1
+  publish:
+    name: Publish wheels
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    environment: pre-release
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: spike-wheels
+        path: wheelhouse
+    - name: Upload to PyPI
       run: |
-        python -m pip install -r requirements.txt
-        python setup.py build_ext --inplace
-        python -m pytest -v
-    - name: Build wheel package
-      run: |
-        python -m build --no-isolation
-        twine check dist/spike-*
-    # - name: Save artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #     name: spike
-    #     path: dist/spike-*
+        python -m pip install -U pip
+        python -m pip install -U packaging twine
+        python -m twine upload wheelhouse/spike-*.whl -u __token__ -p ${{ secrets.PYSPIKE_PUBLISH }}

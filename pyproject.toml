@@ -2,18 +2,129 @@
 requires = [
   "auditwheel",
   "build",
+  "packaging>=25",
   "patchelf",
-  "pybind11[global]",
-  "setuptools >= 51.0",
-  "setuptools_scm[toml] >= 6.2",
+  "pip>=23",
+  "pybind11[global]>3",
+  "setuptools>=75",
+  "setuptools_scm[toml]>=9",
   "wheel"
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.cibuildwheel]
+build = [
+  "cp38-manylinux_x86_64",
+  "cp39-manylinux_x86_64",
+  "cp310-manylinux_x86_64",
+  "cp311-manylinux_x86_64",
+  "cp312-manylinux_x86_64"
+]
+manylinux-x86_64-image = "quay.io/pypa/manylinux2014_x86_64"
+test-environment = {PYTHONPATH = "examples"}
+test-command = "pytest -v -k 'not pyspike_cli'"
+test-extras = [
+  "dev"
+]
+test-sources = [
+  "examples",
+  "tests"
+]
+
+[tool.cibuildwheel.linux]
+before-all = "yum install -y dtc"
+
+[project]
+name = "spike"
+dynamic = ["version"]
+authors = [
+    {name = "LIU Yu", email = "liuyu@huimtlab.org"},
+]
+license = {file = "LICENSE"}
+description = "Python Bindings of Spike RISC-V ISA Simulator"
+readme = {file = "README.md", content-type = "text/markdown"}
+keywords = ["RISC-V", "spike", "ISA", "simulator", "verification"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Framework :: cocotb",
+  "Framework :: Pytest",
+  "Framework :: Sphinx",
+  "Framework :: tox",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: C++",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+  "Topic :: Software Development :: Disassemblers",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Embedded Systems",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed"
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/liuyu81/pyspike"
+
+[project.optional-dependencies]
+dev = [
+  "auditwheel",
+  "build",
+  "packaging>=25",
+  "patchelf",
+  "pexpect",
+  "pip>=23",
+  "pybind11[global]>3",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-mypy",
+  "pytest-pylint",
+  "pytest-repeat",
+  "pytest-timeout",
+  "setuptools>=75",
+  "setuptools_scm[toml]>=9",
+  "twine",
+  "wheel"
+]
+
+[tool.setuptools]
+script-files = [
+  "scripts/spike",
+  "scripts/pyspike"
+]
+
+[tool.setuptools.packages.find]
+where = [
+  "src/main/python"
+]
+include = [
+  "riscv"
+]
+
+[tool.setuptools.package-data]
+riscv = [
+  "data/bin/spike",
+  "data/include/**/*.h",
+  "data/lib/libdisasm.a",
+  "data/lib/libfesvr.a",
+  "data/lib/libriscv.so",
+  "data/lib/pkgconfig/*.pc"
+]
+
 [tool.setuptools_scm]
 write_to = "src/main/python/riscv/_version.py"
 write_to_template = """#
-# Copyright 2024 WuXi EsionTech Co., Ltd.
+# Copyright 2025 WuXi EsionTech Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,3 +143,68 @@ write_to_template = """#
 #
 __version__ = version = {version!r}"""
 local_scheme = "no-local-version"
+
+[tool.pytest.ini_options]
+addopts = "--pylint --mypy --cov=. --cov-report=term-missing"
+# log_cli = true
+# log_level = "DEBUG"
+filterwarnings = [
+  "ignore::UserWarning"
+]
+pythonpath = [
+  "src/main/python",
+  "examples"
+]
+testpaths = [
+  "tests"
+]
+
+[tool.mypy]
+mypy_path = [
+  "src/main/python"
+]
+python_version = "3.8"
+namespace_packages = 1
+explicit_package_bases = 1
+ignore_missing_imports = 1
+check_untyped_defs = 1
+
+[tool.pylint.'BASIC']
+ignore-patterns = [
+  "_version.py"
+]
+
+good-names = [
+  "ex",
+  "pc",
+  "ch"
+]
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+  "missing-docstring",
+  "too-few-public-methods",
+  "too-many-instance-attributes",
+  "too-many-return-statements",
+  "consider-using-get"
+]
+
+[tool.pylint.FORMAT]
+max-line-length = 120
+
+[tool.pylint.SIMILARITIES]
+ignore-comments = "yes"
+ignore-docstrings = "yes"
+ignore-imports = "yes"
+
+[tool.coverage.report]
+exclude_lines = [
+    # Don't complain about namespace package __init__.py
+    "__path__ = __import__(pkgutil).extend_path(__path__, __name__)",
+    # Don't complain if non-runnable code isn't run:
+    "if __name__ == __main__:",
+    # Don't complain about abstract methods, they aren't run:
+    "@abc.abstractmethod",
+    # Don't complain about nop
+    "pass"
+]

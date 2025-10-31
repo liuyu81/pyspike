@@ -28,7 +28,7 @@
 // proxy to state_t::log_reg_write
 class py_commit_log_reg_t {
 public:
-  py_commit_log_reg_t(commit_log_reg_t& ref);
+  py_commit_log_reg_t(commit_log_reg_t &ref);
 
 public:
   size_t len() const;
@@ -41,26 +41,24 @@ public:
   pybind11::str repr() const;
 
 private:
-  commit_log_reg_t& ref;
+  commit_log_reg_t &ref;
 };
-
 
 // proxy to state_t::log_mem_{read,write}
 class py_commit_log_mem_t {
 public:
-  py_commit_log_mem_t(commit_log_mem_t& ref);
+  py_commit_log_mem_t(commit_log_mem_t &ref);
 
 public:
   size_t len() const;
-  void append(const std::tuple<reg_t, uint64_t, uint8_t>& item);
+  void append(const std::tuple<reg_t, uint64_t, uint8_t> &item);
   std::tuple<reg_t, uint64_t, uint8_t> getitem(int index);
   void clear();
   pybind11::str repr() const;
 
 private:
-  commit_log_mem_t& ref;
+  commit_log_mem_t &ref;
 };
-
 
 // py signature : insn_desc_t_create(
 //     match: int,

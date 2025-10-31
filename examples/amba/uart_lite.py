@@ -77,3 +77,6 @@ class UARTLiteMMIO(dev.MMIO):
         if addr == Reg.TX_FIFO and len(data) == 4:
             value = regs[addr:addr + 4].tobytes()
             self.tx_fifo.append(value[0])
+
+    def size(self) -> int:
+        return len(self.regs)
