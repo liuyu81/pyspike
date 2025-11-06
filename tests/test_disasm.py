@@ -23,13 +23,14 @@ from riscv.disasm import arg_t, disassembler_t, disasm_insn_t, xpr_name
 @pytest.mark.parametrize("raw_insn,exp_name,exp_mnemonic", [
     pytest.param(b"\x81\x45", "c.li", "c.li    a1, 0", id="c.li"),
     pytest.param(b"\x13\x86\x82\x02", "addi", "addi    a2, t0, 40", id="addi"),
+    pytest.param(b"\x53\x95\x80\xc2", "fcvtmod.w.d", "fcvtmod.w.d a0, ft1, rtz", id="fcvtmod.w.d")
 ])
 def test_disassembler_t(raw_insn, exp_name, exp_mnemonic):
     """
     test riscv disassembler
     """
     insn = insn_t(raw_insn)
-    isa_parser = isa_parser_t("rv64gcv_zicsr_zifencei_zba_zbb_zbc_zbs", "msu")
+    isa_parser = isa_parser_t("rv64gc_zicsr_zifencei_zba_zbb_zbc_zbs_zfa", "msu")
     disasm = disassembler_t(isa_parser)
     assert disasm.disassemble(insn) == exp_mnemonic
     assert disasm.lookup(insn) == insn
