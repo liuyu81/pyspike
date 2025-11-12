@@ -39,7 +39,13 @@ public:
          const std::vector<std::pair<std::string, std::vector<std::string>>>
              &plugin_device_factories,
          const std::vector<std::string> &args,
-         const debug_module_config_t &dm_config);
+         const debug_module_config_t &dm_config,
+         const std::optional<std::string>& log_path,
+         bool dtb_enabled,
+         const std::optional<std::string>& dtb_file,
+         bool socket_enabled,
+         const std::optional<FILE *>& cmd_file,
+         std::optional<unsigned long long> instruction_limit);
 };
 
 #endif // _RISCV_SIM_H_
