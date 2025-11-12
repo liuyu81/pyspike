@@ -27,34 +27,42 @@ from setuptools.command.build_py import build_py as _build_py
 # pylint: disable=import-error
 from pybind11.setup_helpers import Pybind11Extension, build_ext as _bulid_ext
 
-RISCV = os.environ.get("RISCV", "/opt/riscv")
+
+GCOV: bool = bool(os.environ.get("GCOV", None))
+RISCV: str = os.environ.get("RISCV", "/opt/riscv")
 
 site.addsitedir(pathlib.Path(__file__).parent)
 
 package = importlib.import_module("riscv")
 
-bridge_module = Pybind11Extension(
-    f"{package.__name__}._riscv",
-    glob.glob("src/main/cpp/*.cc"),
-    extra_compile_args=[
-        "-std=c++2a",
-    ],
-    define_macros=[
-        ("ENV_PYSPIKE_LIBS", f"\"{ package.ENV_PYSPIKE_LIBS }\""),
-        ("PYBIND11_DETAILED_ERROR_MESSAGES", "1"),
-    ],
-    extra_link_args=[
-        r"-Wl,-rpath,$ORIGIN/data/lib",
-        f"-Wl,-rpath,{RISCV}/lib",
-        f"-Lsrc/main/python/{package.__name__}/data/lib",
-        "-lriscv",
-    ],
-    include_dirs=[
-        "src/main/cpp",
-        f"src/main/python/{package.__name__}/data/include",
-        f"{RISCV}/include",
-    ]
-)
+
+def _config_bridge(gcov: bool) -> Pybind11Extension:
+    gcov_compile_args = ("-O0", "--coverage", ) if gcov else ()
+    gcov_link_args = ("--coverage", ) if gcov else ()
+    return Pybind11Extension(
+        f"{package.__name__}._riscv",
+        glob.glob("src/main/cpp/*.cc"),
+        extra_compile_args=[
+            "-std=c++2a",
+            *gcov_compile_args,
+        ],
+        define_macros=[
+            ("ENV_PYSPIKE_LIBS", f"\"{ package.ENV_PYSPIKE_LIBS }\""),
+            ("PYBIND11_DETAILED_ERROR_MESSAGES", "1"),
+        ],
+        extra_link_args=[
+            r"-Wl,-rpath,$ORIGIN/data/lib",
+            f"-Wl,-rpath,{RISCV}/lib",
+            f"-Lsrc/main/python/{package.__name__}/data/lib",
+            "-lriscv",
+            *gcov_link_args,
+        ],
+        include_dirs=[
+            "src/main/cpp",
+            f"src/main/python/{package.__name__}/data/include",
+            f"{RISCV}/include",
+        ]
+    )
 
 
 def _build_spike(package_dir: pathlib.Path) -> None:
@@ -88,6 +96,6 @@ class build_ext(_bulid_ext):
 
 
 setup(
-    ext_modules=[bridge_module],
+    ext_modules=[_config_bridge(gcov=GCOV), ],
     cmdclass={"build_py": build_py, "build_ext": build_ext}
 )

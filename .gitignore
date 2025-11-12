@@ -8,6 +8,14 @@ __pycache__
 *.pyc
 *.pyo
 *.egg-info
+*.gcov
+*.gcda
+*.gcno
+*.lcov
+*.info
+*.html
+*.css
+*.png
 .coverage
 .egg-info
 .pybuild

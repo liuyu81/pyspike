@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright 2025 WuXi EsionTech Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import sys
+import os
+import argparse
+import pathlib
+from typing import List, Tuple
+from collections import defaultdict
+
+
+class LCovTerminalReporter:
+
+    def __init__(self):
+        self.coverage_data = defaultdict(dict)  # {filename: {line_num: hit_count}}
+
+    def parse_lcov_file(self, lcov_path: str) -> bool:
+        """
+        Parse LCOV file and extract coverage data.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not os.path.exists(lcov_path):
+            print(f"Error: LCOV file '{lcov_path}' not found.")
+            return False
+        cwd = pathlib.Path.cwd().absolute()
+        current_file = None
+        try:
+            with open(lcov_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    # Source file
+                    if line.startswith('SF:'):
+                        current_file = pathlib.Path(line[3:]).resolve().relative_to(cwd).as_posix()
+                    # Line coverage data
+                    elif line.startswith('DA:') and current_file:
+                        parts = line[3:].split(',')
+                        if len(parts) == 2:
+                            try:
+                                line_num = int(parts[0])
+                                hit_count = int(parts[1])
+                                self.coverage_data[current_file][line_num] = hit_count
+                            except ValueError:
+                                continue
+                    # End of record
+                    elif line == 'end_of_record':
+                        current_file = None
+        except Exception as e:
+            print(f"Error parsing LCOV file: {e}")
+            return False
+        return True
+    
+    def calculate_coverage_stats(self, filename: str) -> Tuple[int, int, float]:
+        """
+        Calculate coverage statistics for a file.
+        
+        Returns:
+            Tuple[int, int, float]: (covered_lines, total_lines, coverage_percentage)
+        """
+        file_coverage = self.coverage_data[filename]
+        if not file_coverage:
+            return 0, 0, 0.0
+        total_lines = len(file_coverage)
+        covered_lines = sum(1 for count in file_coverage.values() if count > 0)
+        coverage_percent = (covered_lines / total_lines) * 100 if total_lines > 0 else 0.0
+        return covered_lines, total_lines, coverage_percent
+    
+    def get_missing_lines(self, filename: str) -> List[int]:
+        """Get list of line numbers that are not covered."""
+        file_coverage = self.coverage_data[filename]
+        return sorted([line_num for line_num, count in file_coverage.items() if count == 0])
+    
+    def format_missing_ranges(self, missing_lines: List[int]) -> str:
+        """Format missing lines as ranges like '66-69', '42, 47, 52-53'."""
+        if not missing_lines:
+            return ""
+        ranges = []
+        start = missing_lines[0]
+        end = missing_lines[0]
+        for line_num in missing_lines[1:]:
+            if line_num == end + 1:
+                end = line_num
+            else:
+                if start == end:
+                    ranges.append(str(start))
+                else:
+                    ranges.append(f"{start}-{end}")
+                start = line_num
+                end = line_num
+        if start == end:
+            ranges.append(str(start))
+        else:
+            ranges.append(f"{start}-{end}")
+        return ", ".join(ranges)
+    
+    def generate_report(self, *lcov_files: str) -> bool:
+        """
+        Generate the complete coverage report in the exact format.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        for lcov_file in lcov_files:
+            if not self.parse_lcov_file(lcov_file):
+                return False
+        files_with_coverage = [f for f in self.coverage_data.keys() if self.coverage_data[f]]
+        if not files_with_coverage:
+            print("No coverage data found.")
+            return True
+        # Sort files by name for consistent output
+        files_with_coverage.sort()
+        # Calculate column widths
+        max_name_width = max(len(f) for f in files_with_coverage)
+        max_name_width = max(max_name_width, 4)  # At least as wide as "Name"
+        # Print header
+        print(f"{'Name':<{max_name_width}} {'Stmts':>6} {'Miss':>6} {'Cover':>7}   Missing")
+        print("-" * (max_name_width + 35))  # Adjust separator length based on content
+        total_stmts = 0
+        total_miss = 0
+        # Print each file
+        for filename in files_with_coverage:
+            covered, total, coverage_percent = self.calculate_coverage_stats(filename)
+            missed = total - covered
+            missing_ranges = self.format_missing_ranges(self.get_missing_lines(filename))
+            # Format coverage percentage without decimal places
+            coverage_display = f"{round(coverage_percent)}%"
+            print(f"{filename:<{max_name_width}} {total:>6} {missed:>6} {coverage_display:>7}   {missing_ranges}")
+            total_stmts += total
+            total_miss += missed
+        # Print footer
+        print("-" * (max_name_width + 35))
+        # Calculate total coverage
+        total_covered = total_stmts - total_miss
+        total_coverage = (total_covered / total_stmts * 100) if total_stmts > 0 else 0.0
+        total_coverage_display = f"{round(total_coverage)}%"        
+        print(f"{'TOTAL':<{max_name_width}} {total_stmts:>6} {total_miss:>6} {total_coverage_display:>7}")        
+        return True
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Generate terminal coverage report from LCOV data file",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Example output:
+    Name                                Stmts   Miss  Cover   Missing
+    -----------------------------------------------------------------
+    examples/amba/__init__.py               2      0   100%
+    examples/amba/uart_lite.py             49      4    92%   66-69
+    examples/amba/uart_lite_impl.py        30      0   100%
+    -----------------------------------------------------------------
+    TOTAL                                 826    230    72%
+        """
+    )
+    parser.add_argument("lcov_file", nargs=argparse.ONE_OR_MORE, help="Path to LCOV coverage data file")
+    args = parser.parse_args()
+    reporter = LCovTerminalReporter()
+    success = reporter.generate_report(*args.lcov_file)
+    sys.exit(0 if success else 1)
+
+
+if __name__ == "__main__":
+    main()

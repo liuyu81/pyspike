@@ -145,7 +145,7 @@ __version__ = version = {version!r}"""
 local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
-addopts = "--pylint --mypy --cov=. --cov-report=term-missing"
+addopts = "--pylint --mypy --cov --cov-report=lcov"
 # log_cli = true
 # log_level = "DEBUG"
 filterwarnings = [
@@ -158,12 +158,12 @@ pythonpath = [
 testpaths = [
   "tests"
 ]
+asyncio_default_fixture_loop_scope = "session"
 
 [tool.mypy]
 mypy_path = [
   "src/main/python"
 ]
-python_version = "3.8"
 namespace_packages = 1
 explicit_package_bases = 1
 ignore_missing_imports = 1
@@ -196,6 +196,16 @@ max-line-length = 120
 ignore-comments = "yes"
 ignore-docstrings = "yes"
 ignore-imports = "yes"
+
+[tool.coverage.run]
+source = [
+  "examples",
+  "src/main/python",
+  "tests"
+]
+
+[tool.coverage.lcov]
+output = "riscv.lcov"
 
 [tool.coverage.report]
 exclude_lines = [
