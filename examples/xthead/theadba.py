@@ -21,7 +21,7 @@ from riscv.disasm import disasm_insn_t
 from riscv.extension import extension_t
 from riscv.processor import insn_desc_t, processor_t, illegal_instruction
 
-from . import operands as op
+from . import arg
 
 
 class TheadBa(extension_t):
@@ -42,7 +42,7 @@ class TheadBa(extension_t):
     # pylint: disable=unused-argument
     def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return [
-            disasm_insn_t("th.addsl", 0x100b, 0xf800707f, op.rd, op.rs1, op.rs2, op.imm2)
+            disasm_insn_t("th.addsl", 0x100b, 0xf800707f, arg.rd, arg.rs1, arg.rs2, arg.imm2)
         ]
 
     # pylint: disable=unused-argument

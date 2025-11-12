@@ -16,42 +16,30 @@
 #
 
 # pylint: disable=import-error,no-name-in-module
+from riscv import isa
 from riscv.decode import insn_t
-from riscv.disasm import arg_t, xpr_name
+from riscv.disasm import xpr_name
 
 
 __all__ = ["rd", "rs1", "rs2", "imm2"]
 
 
-class _rd_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rd]
-
-
-class _rs1_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rs1]
+@isa.arg
+def rd(insn: insn_t) -> str:
+    return xpr_name[insn.rd]
 
 
-class _rs2_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rs2]
-
-
-class _imm2_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        bits = int.from_bytes(insn.bits, "little")
-        return str((bits >> 25) & 0b11)
+@isa.arg
+def rs1(insn: insn_t) -> str:
+    return xpr_name[insn.rs1]
 
 
-rd = _rd_t()
+@isa.arg
+def rs2(insn: insn_t) -> str:
+    return xpr_name[insn.rs2]
 
-rs1 = _rs1_t()
 
-rs2 = _rs2_t()
-
-imm2 = _imm2_t()
+@isa.arg
+def imm2(insn: insn_t) -> str:
+    bits = int.from_bytes(insn.bits, "little")
+    return str((bits >> 25) & 0b11)
