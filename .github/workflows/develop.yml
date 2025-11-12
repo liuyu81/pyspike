@@ -39,14 +39,14 @@ jobs:
     - name: Fetch tags
       run: |
         git fetch --tags origin
-    - name: Install deps
+    - name: Install deb packages
       run: |
-        sudo apt install -y build-essential device-tree-compiler
+        sudo apt install -y build-essential device-tree-compiler lcov
     - name: Setup python
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python }}
-    - name: Build editable
+    - name: Setup dependencies
       env:
         RISCV: /opt/riscv
         PYBIND11_DETAILED_ERROR_MESSAGES: 1
@@ -54,5 +54,15 @@ jobs:
         python -m venv .venv${{ matrix.python }}
         .venv${{ matrix.python }}/bin/python -m pip install -e '.[dev]'
     - name: Lint and test
+      env:
+        GCOV: 1
       run: |
+        .venv${{ matrix.python }}/bin/python setup.py build_ext --inplace
         PATH=scripts:$PATH .venv${{ matrix.python }}/bin/python -m pytest -v
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ matrix.python }}
+        path: "*.lcov"
+        overwrite: true
+        retention-days: 1
