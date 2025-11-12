@@ -22,7 +22,7 @@ from riscv.disasm import disasm_insn_t
 from riscv.extension import extension_t
 from riscv.processor import insn_desc_t, processor_t
 
-from . import operands as op
+from . import arg
 
 
 class MyLRSC(extension_t):
@@ -44,10 +44,10 @@ class MyLRSC(extension_t):
     # pylint: disable=unused-argument
     def get_disasms(self, proc: processor_t) -> List[disasm_insn_t]:
         return [
-            disasm_insn_t("lr.w", 0x1000202f, 0xf9f0707f, op.rd, op.base_only_address),
-            disasm_insn_t("lr.d", 0x1000302f, 0xf9f0707f, op.rd, op.base_only_address),
-            disasm_insn_t("sc.w", 0x1800202f, 0xf800707f, op.rd, op.rs2, op.base_only_address),
-            disasm_insn_t("sc.d", 0x1800302f, 0xf800707f, op.rd, op.rs2, op.base_only_address),
+            disasm_insn_t("lr.w", 0x1000202f, 0xf9f0707f, arg.rd, arg.base_only_address),
+            disasm_insn_t("lr.d", 0x1000302f, 0xf9f0707f, arg.rd, arg.base_only_address),
+            disasm_insn_t("sc.w", 0x1800202f, 0xf800707f, arg.rd, arg.rs2, arg.base_only_address),
+            disasm_insn_t("sc.d", 0x1800302f, 0xf800707f, arg.rd, arg.rs2, arg.base_only_address),
         ]
 
     # pylint: disable=unused-argument

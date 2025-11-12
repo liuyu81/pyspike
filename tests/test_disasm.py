@@ -15,9 +15,10 @@
 #
 import pytest
 # pylint: disable=import-error,no-name-in-module
+from riscv import isa
 from riscv.decode import insn_t
 from riscv.isa_parser import isa_parser_t
-from riscv.disasm import arg_t, disassembler_t, disasm_insn_t, xpr_name
+from riscv.disasm import disassembler_t, disasm_insn_t, xpr_name
 
 
 @pytest.mark.parametrize("raw_insn,exp_name,exp_mnemonic", [
@@ -38,56 +39,49 @@ def test_disassembler_t(raw_insn, exp_name, exp_mnemonic):
 
 
 # pylint: disable=invalid-name
-class rvc_imm_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return str(insn.rvc_imm)
-
-
-class rd_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rd]
+@isa.arg
+def rvc_imm(insn: insn_t) -> str:
+    return str(insn.rvc_imm)
 
 
-class rs1_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rs1]
-
-
-class rs2_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rs2]
+@isa.arg
+def rd(insn: insn_t) -> str:
+    return xpr_name[insn.rd]
 
 
-class imm2_t(arg_t):
+@isa.arg
+def rs1(insn: insn_t) -> str:
+    return xpr_name[insn.rs1]
 
-    def to_string(self, insn: insn_t) -> str:
-        bits = int.from_bytes(insn.bits, "little")
-        return str((bits >> 25) & 0b11)
+
+@isa.arg
+def rs2(insn: insn_t) -> str:
+    return xpr_name[insn.rs2]
+
+
+@isa.arg
+def imm2(insn: insn_t) -> str:
+    bits = int.from_bytes(insn.bits, "little")
+    return str((bits >> 25) & 0b11)
 
 
 # pylint: disable=too-many-arguments
-@pytest.mark.parametrize("name,match,mask,operands,raw_insn,mnemonic", [
+@pytest.mark.parametrize("name,match,mask,formatters,raw_insn,mnemonic", [
     pytest.param(
-        "c.li", 0x4581, 0x0,
-        (rd_t(), rvc_imm_t()),
+        "c.li", 0x4581, 0x0, (rd, rvc_imm),
         b"\x81\x45",
         "c.li    a1, 0", id="c.li"),
     pytest.param(
-        "th.addsl", 0x100b, 0xf800707f,
-        (rd_t(), rs1_t(), rs2_t(), imm2_t()),
+        "th.addsl", 0x100b, 0xf800707f, (rd, rs1, rs2, imm2),
         b"\x8b\x12\x73\x04",
         "th.addsl t0, t1, t2, 2", id="th.addsl"),
 ])
-def test_disasm_insn(*, name, match, mask, operands, raw_insn, mnemonic):
+def test_disasm_insn(*, name, match, mask, formatters, raw_insn, mnemonic):
     """
     test custom instruction disassembler
     """
 
-    x = disasm_insn_t(name, match, mask, *operands)
+    x = disasm_insn_t(name, match, mask, *formatters)
     assert x.name == name
     assert x.match == match
     assert x.mask == mask
