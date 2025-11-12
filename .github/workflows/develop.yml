@@ -53,12 +53,10 @@ jobs:
       run: |
         python -m venv .venv${{ matrix.python }}
         .venv${{ matrix.python }}/bin/python -m pip install -e '.[dev]'
-    - name: Lint and test
-      env:
-        GCOV: 1
+    - name: Test with coverage
       run: |
-        .venv${{ matrix.python }}/bin/python setup.py build_ext --inplace
-        PATH=scripts:$PATH .venv${{ matrix.python }}/bin/python -m pytest -v
+        .venv${{ matrix.python }}/bin/python setup.py build_ext --inplace --cov
+        PATH=scripts:$PATH .venv${{ matrix.python }}/bin/python -m pytest -v --cov
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:

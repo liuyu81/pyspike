@@ -145,7 +145,7 @@ __version__ = version = {version!r}"""
 local_scheme = "no-local-version"
 
 [tool.pytest.ini_options]
-addopts = "--pylint --mypy --cov --cov-report=lcov"
+addopts = "--pylint --mypy --cov-report=lcov"
 # log_cli = true
 # log_level = "DEBUG"
 filterwarnings = [

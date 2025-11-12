@@ -26,7 +26,7 @@ from riscv.debug_module import debug_module_config_t
 from riscv.sim import sim_t
 
 
-GCOV: bool = bool(os.environ.get("GCOV", None))
+project_dir = pathlib.Path(__file__).parent.parent.absolute()
 
 
 @pytest.fixture(scope="session")
@@ -53,46 +53,55 @@ def mock_sim():
         dm_config=debug_module_config_t())
 
 
+def pytest_configure(config: pytest.Config):
+    # the `--cov` option is provided by `pytest-cov` plugin
+    cov_plugin = config.pluginmanager.get_plugin("_cov")
+    if cov_plugin and not getattr(cov_plugin, "_disabled", False):
+        os.environ["GCOV"] = "1"
+
+
 # pylint: disable=unused-argument
 @pytest.hookimpl(tryfirst=True)
 def pytest_report_header(config: pytest.Config):
-    return f"pyspike: gcov={'on' if GCOV else 'off'}"
+    with_cov = bool(os.environ.get("GCOV", None))
+    return f"pyspike: cov={'on' if with_cov else 'off'}"
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_terminal_summary(terminalreporter, exitstatus: int, config: pytest.Config):
-    verbosity = config.getoption("verbose")
-    if GCOV and exitstatus == 0:
-        _lcov_report(terminalreporter, verbosity)
+    with_cov = bool(os.environ.get("GCOV", None))
+    if with_cov and exitstatus == 0:
+        _lcov_report(terminalreporter, config.getoption("verbose"))
 
 
 def _lcov_report(terminalreporter, verbosity: int):
     assert shutil.which("lcov") is not None, "`lcov` not found in $PATH"
-    assert shutil.which("lcov-report") is not None, "`lcov-report` not found in $PATH"
-    project_dir = pathlib.Path(__file__).parent.parent.absolute()
+    assert shutil.which("lcov-report", path="scripts") is not None, "`lcov-report` not found in `scripts`"
     lcov_cpp = project_dir.joinpath("_riscv.lcov")
     lcov_py = project_dir.joinpath("riscv.lcov")
     # generate C++ trace file
-    lcov_verbosity = ["--quiet"] if verbosity < 2 else []
+    lcov_args = ["--ignore-errors", "gcov,mismatch,empty,unused"]
+    if verbosity < 2:
+        lcov_args.append("--quiet")
     subprocess.run([
-        "lcov", *lcov_verbosity, "--capture", "--test-name", project_dir.name,
+        "lcov", *lcov_args, "--capture", "--test-name", project_dir.name, "--no-external",
         "--directory", project_dir.joinpath("build").as_posix(), "--base-directory", project_dir.as_posix(),
-        "--no-external", "--demangle-cpp", "--ignore-errors", "gcov,mismatch", "-o", lcov_cpp.as_posix()
+        "--demangle-cpp", "-o", lcov_cpp.as_posix()
     ], env=os.environ, cwd=project_dir, check=True)
     subprocess.run([
-        "lcov", *lcov_verbosity, "--remove", lcov_cpp.as_posix(), r"**/.venv*/**/*", "-o", lcov_cpp.as_posix()
+        "lcov", *lcov_args, "--remove", lcov_cpp.as_posix(), r"**/.venv*/**/*", "-o", lcov_cpp.as_posix()
     ], env=os.environ, cwd=project_dir, check=True)
     subprocess.run([
-        "lcov", *lcov_verbosity, "--remove", lcov_cpp.as_posix(), r"**/data/include/**/*", "-o", lcov_cpp.as_posix()
+        "lcov", *lcov_args, "--remove", lcov_cpp.as_posix(), r"**/data/include/**/*", "-o", lcov_cpp.as_posix()
     ], env=os.environ, cwd=project_dir, check=True)
     subprocess.run([
-        "lcov", *lcov_verbosity, "--substitute", f"s#{project_dir}/##g",
+        "lcov", *lcov_args, "--substitute", f"s#{project_dir}/##g",
         "--add-tracefile", lcov_cpp.as_posix(), "-o", lcov_cpp.as_posix()
     ], env=os.environ, cwd=project_dir, check=True)
     # generate report (`lcov --list` on 'ubuntu 24.04' is broken, use custom reporter)
     assert lcov_cpp.exists(), "`_riscv.lcov` not generated"
     assert lcov_py.exists(), "`riscv.lcov` not generated"
     result = subprocess.run([
-        "lcov-report", lcov_cpp.as_posix(), lcov_py.as_posix()
+        "scripts/lcov-report", lcov_cpp.as_posix(), lcov_py.as_posix()
     ], env=os.environ, cwd=project_dir, check=True, capture_output=True, text=True)
     terminalreporter.write(result.stdout)

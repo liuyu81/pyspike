@@ -93,6 +93,8 @@ $ cd pyspike
 
 ### Setting Up Develop Environment
 
+Install with `pip` in *editable* mode. This will setup development dependencies as well.
+
 ```shell
 $ python -m venv .venv
 $ source .venv/bin/activate
@@ -101,16 +103,27 @@ $ source .venv/bin/activate
 
 ### Running Tests
 
+Run the built-in test suite with `pytest`.
+
 ```shell
 (.venv) $ python -m pytest -v
 ```
 
 ### Running Tests with Coverage
 
+To enable coverage report, rebuild the extension module with `--cov` option, then re-run the test suite also with `--cov` option. You should see the coverage report by the end of the test output.
+
+Note, if leaving out the first step, the C++ code will *not* show up in the coverage report.
+
 ```shell
-(.venv) $ GCOV=1 python setup.py build_ext --inplace
-(.venv) $ GCOV=1 python -m pytest -v
-(.venv) $ genhtml -o coverage --substitute s#^#$PWD/#g *.lcov
+(.venv) $ python setup.py build_ext --inplace --cov
+(.venv) $ python -m pytest -v --cov
+```
+
+Optionally, you can generate HTML coverage report from the `lcov` data files.
+
+```shell
+(.venv) $ genhtml -o coverage --substitute "s#^#$PWD/#g" *.lcov
 ```
 
 ### Packaging
