@@ -105,6 +105,14 @@ $ source .venv/bin/activate
 (.venv) $ python -m pytest -v
 ```
 
+### Running Tests with Coverage
+
+```shell
+(.venv) $ GCOV=1 python setup.py build_ext --inplace
+(.venv) $ GCOV=1 python -m pytest -v
+(.venv) $ genhtml -o coverage --substitute s#^#$PWD/#g *.lcov
+```
+
 ### Packaging
 
 ```shell
