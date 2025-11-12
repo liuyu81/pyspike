@@ -70,22 +70,25 @@ def _lcov_report(terminalreporter, verbosity: int):
     assert shutil.which("lcov") is not None, "`lcov` not found in $PATH"
     assert shutil.which("lcov-report") is not None, "`lcov-report` not found in $PATH"
     project_dir = pathlib.Path(__file__).parent.parent.absolute()
-    inplace_build_dir = project_dir.joinpath("build")
-    lcov_verbosity = ["--quiet"] if verbosity < 2 else []
-    # generate C++ trace file
     lcov_cpp = project_dir.joinpath("_riscv.lcov")
     lcov_py = project_dir.joinpath("riscv.lcov")
+    # generate C++ trace file
+    lcov_verbosity = ["--quiet"] if verbosity < 2 else []
     subprocess.run([
-        "lcov", *lcov_verbosity,
-        "--capture", "--directory", f"{inplace_build_dir}", "--base-directory", f"{project_dir}",
+        "lcov", *lcov_verbosity, "--capture", "--test-name", project_dir.name,
+        "--directory", project_dir.joinpath("build").as_posix(), "--base-directory", project_dir.as_posix(),
         "--no-external", "--demangle-cpp", "--ignore-errors", "gcov,mismatch", "-o", lcov_cpp.as_posix()
-    ], env=os.environ, check=True)
+    ], env=os.environ, cwd=project_dir, check=True)
     subprocess.run([
         "lcov", *lcov_verbosity, "--remove", lcov_cpp.as_posix(), r"**/.venv*/**/*", "-o", lcov_cpp.as_posix()
-    ], env=os.environ, check=True)
+    ], env=os.environ, cwd=project_dir, check=True)
     subprocess.run([
         "lcov", *lcov_verbosity, "--remove", lcov_cpp.as_posix(), r"**/data/include/**/*", "-o", lcov_cpp.as_posix()
-    ], env=os.environ, check=True)
+    ], env=os.environ, cwd=project_dir, check=True)
+    subprocess.run([
+        "lcov", *lcov_verbosity, "--substitute", f"s#{project_dir}/##g",
+        "--add-tracefile", lcov_cpp.as_posix(), "-o", lcov_cpp.as_posix()
+    ], env=os.environ, cwd=project_dir, check=True)
     # generate report (`lcov --list` on 'ubuntu 24.04' is broken, use custom reporter)
     assert lcov_cpp.exists(), "`_riscv.lcov` not generated"
     assert lcov_py.exists(), "`riscv.lcov` not generated"
