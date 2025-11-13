@@ -32,7 +32,13 @@ py_sim_t *py_sim_t::create(
     const std::vector<std::pair<std::string, std::vector<std::string>>>
         &plugin_device_factories,
     const std::vector<std::string> &args,
-    const debug_module_config_t &dm_config) {
+    const debug_module_config_t &dm_config,
+    const std::optional<std::string>& log_path,
+    bool dtb_enabled,
+    const std::optional<std::string>& dtb_file,
+    bool socket_enabled,
+    const std::optional<FILE *>& cmd_file,
+    std::optional<unsigned long long> instruction_limit) {
   // allocate mem based on mem_layout
   std::vector<std::pair<reg_t, abstract_mem_t *>> mems;
   mems.reserve(cfg.mem_layout.size());
@@ -47,7 +53,13 @@ py_sim_t *py_sim_t::create(
     const std::vector<std::string> &sargs = v;
     factories.push_back(std::make_pair(factory, sargs));
   }
+  // adapt py_sim_t ctor arguments
+  const char * _log_path = log_path.has_value() ? log_path.value().c_str() : nullptr;
+  const char * _dtb_file = dtb_file.has_value() ? dtb_file.value().c_str() : nullptr;
+  FILE * _cmd_file = cmd_file.value_or(nullptr);
   // allocate py_sim_t instance
-  return new py_sim_t(&cfg, halted, mems, factories, args, dm_config, nullptr,
-                      true, nullptr, false, nullptr, std::nullopt);
+  return new py_sim_t(
+    &cfg, halted, mems, factories, args, dm_config,
+    _log_path, dtb_enabled, _dtb_file, socket_enabled,
+    _cmd_file, instruction_limit);
 }

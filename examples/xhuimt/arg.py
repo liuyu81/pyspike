@@ -16,33 +16,24 @@
 #
 
 # pylint: disable=import-error,no-name-in-module
+from riscv import isa
 from riscv.decode import insn_t
-from riscv.disasm import arg_t, xpr_name
+from riscv.disasm import xpr_name
 
 
 __all__ = ["rd", "base_only_address", "rs2"]
 
 
-class _rd_t(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rd]
-
-
-class _base_only_address(arg_t):
-
-    def to_string(self, insn: insn_t) -> str:
-        return "(" + xpr_name[insn.rs1] + ")"
+@isa.arg
+def rd(insn: insn_t) -> str:
+    return xpr_name[insn.rd]
 
 
-class _rs2_t(arg_t):
+@isa.arg
+def base_only_address(insn: insn_t) -> str:
+    return "(" + xpr_name[insn.rs1] + ")"
 
-    def to_string(self, insn: insn_t) -> str:
-        return xpr_name[insn.rs2]
 
-
-rd = _rd_t()
-
-base_only_address = _base_only_address()
-
-rs2 = _rs2_t()
+@isa.arg
+def rs2(insn: insn_t) -> str:
+    return xpr_name[insn.rs2]

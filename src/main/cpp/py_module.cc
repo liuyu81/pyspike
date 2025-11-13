@@ -318,6 +318,10 @@ PYBIND11_MODULE(_riscv, m) {
         .def_property_readonly("p_imm5", &insn_t::p_imm5)
         .def_property_readonly("p_imm6", &insn_t::p_imm6)
 
+        .def_property_readonly("b_imm5", &insn_t::b_imm5)
+
+        .def_property_readonly("zcmp_regmask", &insn_t::zcmp_regmask)
+
         .def("__len__", &insn_t::length)
         .def("__eq__",
              [](insn_t &self, insn_t &other) {
@@ -914,7 +918,10 @@ PYBIND11_MODULE(_riscv, m) {
         mod_sim, "sim_t", py::multiple_inheritance())
         .def(py::init(&py_sim_t::create), py::kw_only(), py::arg("cfg"),
              py::arg("halted"), py::arg("plugin_device_factories"),
-             py::arg("args"), py::arg("dm_config"))
+             py::arg("args"), py::arg("dm_config"), py::arg("log_path") = std::nullopt,
+             py::arg("dtb_enabled") = true, py::arg("dtb_file") = std::nullopt,
+             py::arg("socket_enabled") = false, py::arg("cmd_file") = std::nullopt,
+             py::arg("instruction_limit") = std::nullopt)
         .def_property_readonly("cfg", &sim_t::get_cfg)
         .def_property_readonly("plic", &sim_t::get_intctrl)
         .def_property_readonly("nprocs", &sim_t::nprocs)

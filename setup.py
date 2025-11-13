@@ -27,34 +27,37 @@ from setuptools.command.build_py import build_py as _build_py
 # pylint: disable=import-error
 from pybind11.setup_helpers import Pybind11Extension, build_ext as _bulid_ext
 
-RISCV = os.environ.get("RISCV", "/opt/riscv")
+
+RISCV: str = os.environ.get("RISCV", "/opt/riscv")
 
 site.addsitedir(pathlib.Path(__file__).parent)
 
 package = importlib.import_module("riscv")
 
-bridge_module = Pybind11Extension(
-    f"{package.__name__}._riscv",
-    glob.glob("src/main/cpp/*.cc"),
-    extra_compile_args=[
-        "-std=c++2a",
-    ],
-    define_macros=[
-        ("ENV_PYSPIKE_LIBS", f"\"{ package.ENV_PYSPIKE_LIBS }\""),
-        ("PYBIND11_DETAILED_ERROR_MESSAGES", "1"),
-    ],
-    extra_link_args=[
-        r"-Wl,-rpath,$ORIGIN/data/lib",
-        f"-Wl,-rpath,{RISCV}/lib",
-        f"-Lsrc/main/python/{package.__name__}/data/lib",
-        "-lriscv",
-    ],
-    include_dirs=[
-        "src/main/cpp",
-        f"src/main/python/{package.__name__}/data/include",
-        f"{RISCV}/include",
-    ]
-)
+
+def _config_bridge() -> Pybind11Extension:
+    return Pybind11Extension(
+        f"{package.__name__}._riscv",
+        glob.glob("src/main/cpp/*.cc"),
+        extra_compile_args=[
+            "-std=c++2a",
+        ],
+        define_macros=[
+            ("ENV_PYSPIKE_LIBS", f"\"{ package.ENV_PYSPIKE_LIBS }\""),
+            ("PYBIND11_DETAILED_ERROR_MESSAGES", "1"),
+        ],
+        extra_link_args=[
+            r"-Wl,-rpath,$ORIGIN/data/lib",
+            f"-Wl,-rpath,{RISCV}/lib",
+            f"-Lsrc/main/python/{package.__name__}/data/lib",
+            "-lriscv",
+        ],
+        include_dirs=[
+            "src/main/cpp",
+            f"src/main/python/{package.__name__}/data/include",
+            f"{RISCV}/include",
+        ]
+    )
 
 
 def _build_spike(package_dir: pathlib.Path) -> None:
@@ -82,12 +85,28 @@ class build_py(_build_py):
 
 class build_ext(_bulid_ext):
 
+    user_options = _bulid_ext.user_options + [
+        ('cov', None, "Enable coverage collection"),
+    ]
+
+    def initialize_options(self):
+        super().initialize_options()
+        self.cov = False
+
+    def finalize_options(self):
+        super().finalize_options()
+        gcov_compile_args = ["-O0", "--coverage"] if self.cov else []
+        gcov_link_args = ["--coverage"] if self.cov else []
+        for ext in self.extensions:
+            ext.extra_compile_args = list(ext.extra_compile_args) + gcov_compile_args
+            ext.extra_link_args = list(ext.extra_link_args) + gcov_link_args
+
     def build_extensions(self):
         _build_spike(pathlib.Path(package.__file__).parent.absolute())
         return super().build_extensions()
 
 
 setup(
-    ext_modules=[bridge_module],
+    ext_modules=[_config_bridge(), ],
     cmdclass={"build_py": build_py, "build_ext": build_ext}
 )
