@@ -900,7 +900,8 @@ PYBIND11_MODULE(_riscv, m) {
 
     py::class_<htif_t, py::smart_holder>(mod_htif, "htif_t")
         .def_property_readonly("tohost_addr", &htif_t::get_tohost_addr)
-        .def_property_readonly("fromhost_addr", &htif_t::get_fromhost_addr);
+        .def_property_readonly("fromhost_addr", &htif_t::get_fromhost_addr)
+        .def("htif_exit", &sim_t::htif_exit, py::arg("exit_code"));
   }
 
   // riscv.simif
