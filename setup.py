@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import contextlib
 import glob
 import importlib
 import os
@@ -24,6 +25,7 @@ import subprocess
 import tempfile
 from setuptools import setup
 from setuptools.command.build_py import build_py as _build_py
+from setuptools_scm import get_version, ScmVersion
 # pylint: disable=import-error
 from pybind11.setup_helpers import Pybind11Extension, build_ext as _bulid_ext
 
@@ -60,12 +62,45 @@ def _config_bridge() -> Pybind11Extension:
     )
 
 
+# pylint: disable=unused-argument
+def _local_scheme(version: ScmVersion) -> str:
+    try:
+        spike_commit = subprocess.run([
+            "git", "-C", "vendor/spike", "rev-parse", "--short", "HEAD"
+        ], check=True, capture_output=True, text=True).stdout.strip()
+        pyspike_commit = subprocess.run([
+            "git", "rev-parse", "--short", "HEAD"
+        ], check=True, capture_output=True, text=True).stdout.strip()
+        return f"+pyspike.g{pyspike_commit}.spike.g{spike_commit}"
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+    return "+pyspike.unknown.spike.unknown"
+
+
+@contextlib.contextmanager
+def _dynamic_version(source_dir: pathlib.Path):
+    with source_dir.joinpath("VERSION").open("r+") as f_ver:
+        default_version = f_ver.read()
+        try:
+            full_version = getattr(package, "__version__", None)
+            if full_version is None or "+" not in full_version:
+                full_version = get_version(local_scheme=_local_scheme)
+            f_ver.seek(0)
+            f_ver.write(f"#define SPIKE_VERSION \"{full_version}\"\n")
+            f_ver.truncate()
+            yield full_version
+        finally:
+            f_ver.seek(0)
+            f_ver.write(default_version)
+            f_ver.truncate()
+
+
 def _build_spike(package_dir: pathlib.Path) -> None:
     source_dir = package_dir.parent.parent.parent.parent.joinpath("vendor", "spike")
     dest_dir = package_dir.joinpath("data")
     if dest_dir.joinpath("include", "riscv", "encoding.h").exists():
         return
-    with tempfile.TemporaryDirectory(prefix="build.", dir=source_dir) as build_dir:
+    with tempfile.TemporaryDirectory(prefix="build.", dir=source_dir) as build_dir, _dynamic_version(source_dir):
         current_dir = os.getcwd()
         try:
             os.chdir(build_dir)
@@ -106,7 +141,7 @@ class build_ext(_bulid_ext):
         return super().build_extensions()
 
 
-setup(
-    ext_modules=[_config_bridge(), ],
-    cmdclass={"build_py": build_py, "build_ext": build_ext}
-)
+if __name__ == '__main__':
+    setup(
+        ext_modules=[_config_bridge(), ],
+        cmdclass={"build_py": build_py, "build_ext": build_ext})
