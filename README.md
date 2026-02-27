@@ -2,7 +2,7 @@
 
 ```text
 LIU Yu <liuy@huimtlab.org>
-2025/10/16 (v0.0.5)
+2026/3/1 (v0.0.5)
 ```
 
 ## Introduction
@@ -26,7 +26,7 @@ PySpike ships the original command-line tool `spike`, a.k.a *vanilla Spike*, wit
 
 ```shell
 $ spike --help
-Spike RISC-V ISA Simulator 1.1.1-dev
+Spike RISC-V ISA Simulator 0.0.5...
 ...
 ```
 
