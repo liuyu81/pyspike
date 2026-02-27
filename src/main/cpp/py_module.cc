@@ -542,12 +542,6 @@ PYBIND11_MODULE(_riscv, m) {
         .export_values();
 
     py::enum_<impl_extension_t>(mod_isa_parser, "impl_extension_t")
-        .value("SV32", impl_extension_t::IMPL_MMU_SV32)
-        .value("SV39", impl_extension_t::IMPL_MMU_SV39)
-        .value("SV48", impl_extension_t::IMPL_MMU_SV48)
-        .value("SV57", impl_extension_t::IMPL_MMU_SV57)
-        .value("MMU_SBARE", impl_extension_t::IMPL_MMU_SBARE)
-        .value("MMU", impl_extension_t::IMPL_MMU)
         .value("MMU_VMID", impl_extension_t::IMPL_MMU_VMID)
         .value("MMU_ASID", impl_extension_t::IMPL_MMU_ASID)
         .export_values();
@@ -918,11 +912,11 @@ PYBIND11_MODULE(_riscv, m) {
     py::class_<sim_t, py_sim_t, htif_t, simif_t, py::smart_holder>(
         mod_sim, "sim_t", py::multiple_inheritance())
         .def(py::init(&py_sim_t::create), py::kw_only(), py::arg("cfg"),
-             py::arg("halted"), py::arg("plugin_device_factories"),
-             py::arg("args"), py::arg("dm_config"), py::arg("log_path") = std::nullopt,
-             py::arg("dtb_enabled") = true, py::arg("dtb_file") = std::nullopt,
-             py::arg("socket_enabled") = false, py::arg("cmd_file") = std::nullopt,
-             py::arg("instruction_limit") = std::nullopt)
+             py::arg("halted"), py::arg("plugin_device_factories"), py::arg("args"),
+             py::arg("dm_config") = debug_module_config_t(), py::arg("log_path") = std::nullopt,
+             py::arg("dtb_discovery") = false, py::arg("dtb_enabled") = true,
+             py::arg("dtb_file") = std::nullopt, py::arg("socket_enabled") = false,
+             py::arg("cmd_file") = std::nullopt, py::arg("instruction_limit") = std::nullopt)
         .def_property_readonly("cfg", &sim_t::get_cfg)
         .def_property_readonly("plic", &sim_t::get_intctrl)
         .def_property_readonly("nprocs", &sim_t::nprocs)

@@ -41,6 +41,7 @@ public:
          const std::vector<std::string> &args,
          const debug_module_config_t &dm_config,
          const std::optional<std::string>& log_path,
+         bool dtb_discovery,
          bool dtb_enabled,
          const std::optional<std::string>& dtb_file,
          bool socket_enabled,

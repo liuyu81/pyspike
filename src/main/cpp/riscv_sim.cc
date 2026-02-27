@@ -34,6 +34,7 @@ py_sim_t *py_sim_t::create(
     const std::vector<std::string> &args,
     const debug_module_config_t &dm_config,
     const std::optional<std::string>& log_path,
+    bool dtb_discovery,
     bool dtb_enabled,
     const std::optional<std::string>& dtb_file,
     bool socket_enabled,
@@ -59,7 +60,7 @@ py_sim_t *py_sim_t::create(
   FILE * _cmd_file = cmd_file.value_or(nullptr);
   // allocate py_sim_t instance
   return new py_sim_t(
-    &cfg, halted, mems, factories, args, dm_config,
+    &cfg, halted, mems, factories, dtb_discovery, args, dm_config,
     _log_path, dtb_enabled, _dtb_file, socket_enabled,
     _cmd_file, instruction_limit);
 }
