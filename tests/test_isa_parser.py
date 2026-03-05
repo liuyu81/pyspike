@@ -18,9 +18,9 @@ import pytest
 from riscv.isa_parser import (
     # the following extensions are always present
     # zicsr, zifencei, zicbop, zihintpause, ztk,
-    zicbom, zicboz, zicntr, zicond, zihpm,
+    zicbom, zicboz, zicclsm, zicntr, zicond, zihpm,
     zba, zbb, zbc, zbs, zca, zcb, zcd, zfh, zfhmin,
-    svinval, svpbmt, isa_parser_t)
+    svadu, svinval, svpbmt, isa_parser_t)
 
 
 @pytest.mark.parametrize("isa,priv,exp_xlen,exp_flags", [
@@ -38,8 +38,15 @@ from riscv.isa_parser import (
          zihpm, zba, zbb, zbs, zca, zcb, zcd, zfh, zfhmin, svinval, svpbmt),
         id="z7v-epu/msu"),
     pytest.param("rv32imc_zba_zbb_zbc_zbs", "mu", 32, (
-        *(ord(bit) for bit in "IMC"), zba, zbb, zbc, zbs,
-    ), id="z7v-rpu/msu"),
+        *(ord(bit) for bit in "IMC"), zba, zbb, zbc, zbs),
+        id="z7v-rpu/msu"),
+    pytest.param(
+        "rv64imafdcb_zicsr_zicntr_zihpm_ziccif_zicclsm_zihintpause_zicbom_zicbop_zicboz"
+        "_zkt_zihintntl_zicond_zimop_zacas_zcmop_zcb_zfa_zawrs_zifencei"
+        "_svadu_svnapot_svpbmt_svinval_sstc_sscofpmf", "msu",
+        64,
+        (*(ord(bit) for bit in "IMAFDCB"), zicclsm, svadu),
+        id="zuv-apu/msu")
 ])
 def test_isa_parser_t(isa, priv, exp_xlen, exp_flags):
     """
